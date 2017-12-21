@@ -1,29 +1,51 @@
-#[cfg(test)]
-mod tests;
+/*
+* Copyright 2017 Michal Mauser
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Affero General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Affero General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 use std::collections::HashMap;
 
-struct Product {
+#[derive(Debug)]
+pub struct Product {
     //name: String,
-    material_id: String,
-    material_amount: usize,
-    work_complexity: u8,
+    types: ProductType, //change to Vec in the future
     //scarcity: usize,
     supply: usize,
     demand: usize,
 }
 
-struct Material {
+#[derive(Debug)]
+pub struct ProductType {
+    pub material_amount: (String, usize), //change to materials in the future
+    work_complexity: u8,
+}
+
+#[derive(Debug)]
+pub struct Material {
     //name: String,
-    scarcity: usize,
-    demand: usize,
-    supply: usize,
+    pub scarcity: usize,
+    pub demand: usize,
+    pub supply: usize,
     //deposit_size: usize,
 }
 
 impl Material {
-    fn calculate_scarcity(&mut self) {
-        self.scarcity = self.demand * 100 / (self.supply /*+ self.deposit_size*/) / 2;
+    fn calculate_scarcity(&mut self) { //100/2=50
+        self.scarcity = if self.supply != 0 {
+            self.demand * 50 / (self.supply /*+ self.deposit_size*/)
+        } else { usize::max_value() }
     }
 }
 
@@ -33,46 +55,72 @@ pub struct Instance {
 }
 
 impl Instance {
-    pub fn add_material(&mut self, name: String, supply: usize) {
-        self.materials.insert(name,Material{
-            //name,
-            scarcity: 0,
-            demand: 0,
-            supply,
-            //deposit_size,
-        });
+    pub fn add_material(&mut self, name: String, supply: usize) -> bool {
+        if name.trim().is_empty() || supply == 0 {
+            false }
+        else {
+            if !self.materials.contains_key(&name) {
+                self.materials.insert(name.clone(),Material{
+                    //name,
+                    scarcity: 0,
+                    demand: 0,
+                    supply,
+                    //deposit_size,
+                });
+                //println!("{:?}", self.materials.get(&name).unwrap());
+                true
+            } else {
+                false
+            }
+        }
     }
 
-    pub fn add_product(&mut self, name: String, material_id: String, work_complexity: u8, material_count: usize) {
-        self.products.insert(name, Product{
-            //name,
-            material_id,
-            work_complexity,
-            supply: 0,
-            demand: 0,
-            material_amount: material_count
-        });
+    pub fn add_product(&mut self, name: String, material_id: String, work_complexity: u8, material_amount: usize) -> bool {
+        if name.trim().is_empty()
+            || material_id.trim().is_empty()
+            || material_amount == 0
+            || !self.materials.contains_key(&material_id)
+            || self.products.contains_key(&name) {
+                false
+            }
+        else {
+            self.products.insert(name.clone(), Product{
+                //name,
+                types: ProductType {
+                    material_amount: (material_id, material_amount),
+                    work_complexity,
+                },
+                supply: 0,
+                demand: 0,
+            });
+            //println!("{:?}", self.products.get(&name).unwrap());
+            true
+        }
     }
 
-    pub fn demand_product(&mut self, name: &str, count: usize) -> Result<bool,&str> {
+    pub fn demand_product(&mut self, name: &str, amount: usize) -> Result<bool,&str> {
+        if amount == 0 { return Err("Cannot order 0 products.")}
         let prod = self.products.get_mut(name).unwrap();
-        let mat = match self.materials.get_mut(&prod.material_id) {
+        let mat = match self.materials.get_mut(&prod.types.material_amount.0) {
             Some(m) => m,
             None => return Err("No such material in database."),
         };
-        prod.demand += count;
-        mat.demand += count * prod.material_amount;
+        prod.demand += amount;
+        mat.demand += amount * prod.types.material_amount.1;
         mat.calculate_scarcity();
-        if count <= prod.supply {
-            prod.supply -= count;
-            prod.demand -= count;
+        if amount <= prod.supply {
+            prod.supply -= amount;
+            prod.demand -= amount;
             return Ok(true)
         } else {
-            if mat.scarcity > 50 || mat.supply < (count * prod.material_amount) { return Err("Materials scarce.") }
+            if mat.scarcity > 50 || mat.supply < (amount * prod.types.material_amount.1)
+                { mat.demand -= amount * prod.types.material_amount.1;
+                    return Err("Material scarce.");
+                }
             { //for now we immediately produce product and deliver it
-                manufacture_product(prod, mat, &count);
-                prod.supply -= count;
-                prod.demand -= count;
+                manufacture_product(prod, mat, &amount);
+                prod.supply -= amount;
+                prod.demand -= amount;
             }
             return Ok(false)
         }
@@ -81,7 +129,15 @@ impl Instance {
 
     //pub fn is_in_supply() {}
 
-    //pub fn update_supply() {}
+    pub fn update_supply(&mut self, name: &str, amount: usize) -> bool {
+        match self.materials.get_mut(name) {
+            Some(x) => {
+                x.supply = amount;
+                true
+            },
+            None => false
+        }
+    }
 
     //pub fn update_material_deposit_size() {}
 
@@ -94,9 +150,32 @@ impl Instance {
         }
         None
     }*/
+    pub fn get_material_count (&self) -> usize {
+        self.materials.len()
+    }
+
+    pub fn get_product_count (&self) -> usize {
+        self.products.len()
+    }
+
+    pub fn get_product_types (&self, name: &str) -> &ProductType {
+        &self.products.get(name).unwrap().types
+    }
 
     pub fn tst_set_product_supply(&mut self, name: &str, count: usize) {
         self.products.get_mut(name).unwrap().supply = count;
+    }
+
+    pub fn tst_get_material_params(&self, name: &str) -> &Material {
+        self.materials.get(name).unwrap()
+    }
+
+    pub fn tst_get_materials(&self) -> &HashMap<String, Material> {
+        &self.materials
+    }
+
+    pub fn tst_get_products(&self) -> &HashMap<String, Product> {
+        &self.products
     }
 
 }
@@ -119,10 +198,10 @@ fn search_material<'materials>(materials: &'materials mut Vec<Material>, name: &
     None
 }*/
 
-fn manufacture_product(product: &mut Product, material: &mut Material, count: &usize) {
-    material.supply -= product.material_amount * count;
-    material.demand -= product.material_amount * count;
-    product.supply += count;
+fn manufacture_product(product: &mut Product, material: &mut Material, amount: &usize) {
+    material.supply -= product.types.material_amount.1 * amount;
+    material.demand -= product.types.material_amount.1 * amount;
+    product.supply += amount;
     //product.demand -= count;
 }
 
@@ -130,5 +209,33 @@ pub fn init() -> Instance {
     Instance {
         materials: HashMap::new(),
         products: HashMap::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn add_same_material() {
+        let mut instance = init();
+        instance.add_material(String::from("bla"), 8);
+        instance.add_material(String::from("bla"), 1);
+        assert_eq!(instance.materials.get("bla").unwrap().supply, 8);
+    }
+
+    #[test]
+    fn add_product_without_material() {
+        let mut instance = init();
+        assert!(!instance.add_product(String::from("bla"), String::from("mat"), 5, 10));
+    }
+
+    #[test]
+    fn add_same_product() {
+        let mut instance = init();
+        instance.add_material(String::from("bla"), 8);
+        instance.add_product(String::from("bla"), String::from("bla"), 5, 10);
+        instance.add_product(String::from("bla"), String::from("bla"), 0, 5);
+        assert_eq!(instance.products.get("bla").unwrap().types.material_amount.1, 10);
     }
 }
