@@ -32,7 +32,7 @@ fn main() {
         millis = args[2].parse().unwrap();
     } else {
         cycles = 500;
-        millis = 300;
+        millis = 3000;
     }
     let mut rng = rand::thread_rng();
     let mut instance = resource_mng::init();
@@ -46,7 +46,7 @@ fn main() {
 
     while num < cycles {
         match event_generator::run(&mut instance, &mut rng, 512) {
-            Some(result) => {
+            Ok(result) => {
                 match result.function_number {
                     0 => {
                         println!("[{}] Adding material \"{}\", supply: {}", num, result.name, result.amount);
@@ -57,7 +57,7 @@ fn main() {
                         f1_count +=1;
                     },
                     2 => {
-                        println!("[{}] Manufacturing product \"{}\"\
+                        println!("[{}] Manufacturing product \"{} \"\
                     at the cost of material {}x \"{}\"",
                                  num, result.name, result.amount, result.material_id);
                         f2_count +=1;
@@ -69,7 +69,7 @@ fn main() {
                     _ => {}
                 }
             }
-            None => {}
+            Err(e) => { println!("[{}] {}", num, e) }
         }
         num += 1;
         thread::sleep(time);

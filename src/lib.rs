@@ -18,6 +18,7 @@
 use std::collections::HashMap;
 
 #[derive(Debug)]
+#[repr(C)]
 pub struct Product {
     //name: String,
     types: ProductType, //change to Vec in the future
@@ -27,12 +28,14 @@ pub struct Product {
 }
 
 #[derive(Debug)]
+#[repr(C)]
 pub struct ProductType {
     pub material_amount: (String, usize), //change to materials in the future
     work_complexity: u8,
 }
 
 #[derive(Debug)]
+#[repr(C)]
 pub struct Material {
     //name: String,
     pub scarcity: usize,
@@ -49,13 +52,15 @@ impl Material {
     }
 }
 
+#[repr(C)]
 pub struct Instance {
     materials: HashMap<String,Material>,
     products: HashMap<String,Product>,
 }
 
 impl Instance {
-    pub fn add_material(&mut self, name: String, supply: usize) -> bool {
+    #[no_mangle]
+    pub extern fn add_material(&mut self, name: String, supply: usize) -> bool {
         if name.trim().is_empty() || supply == 0 {
             false }
         else {
@@ -75,7 +80,8 @@ impl Instance {
         }
     }
 
-    pub fn add_product(&mut self, name: String, material_id: String, work_complexity: u8, material_amount: usize) -> bool {
+    #[no_mangle]
+    pub extern fn add_product(&mut self, name: String, material_id: String, work_complexity: u8, material_amount: usize) -> bool {
         if name.trim().is_empty()
             || material_id.trim().is_empty()
             || material_amount == 0
@@ -98,7 +104,8 @@ impl Instance {
         }
     }
 
-    pub fn demand_product(&mut self, name: &str, amount: usize) -> Result<bool,&str> {
+    #[no_mangle]
+    pub extern fn order_product(&mut self, name: &str, amount: usize) -> Result<bool, &'static str> {
         if amount == 0 { return Err("Cannot order 0 products.")}
         let prod = self.products.get_mut(name).unwrap();
         let mat = match self.materials.get_mut(&prod.types.material_amount.0) {
@@ -129,7 +136,8 @@ impl Instance {
 
     //pub fn is_in_supply() {}
 
-    pub fn update_supply(&mut self, name: &str, amount: usize) -> bool {
+    #[no_mangle]
+    pub extern fn update_supply(&mut self, name: &str, amount: usize) -> bool {
         match self.materials.get_mut(name) {
             Some(x) => {
                 x.supply = amount;
@@ -150,31 +158,38 @@ impl Instance {
         }
         None
     }*/
-    pub fn get_material_count (&self) -> usize {
+    #[no_mangle]
+    pub extern fn get_material_count (&self) -> usize {
         self.materials.len()
     }
 
-    pub fn get_product_count (&self) -> usize {
+    #[no_mangle]
+    pub extern fn get_product_count (&self) -> usize {
         self.products.len()
     }
 
-    pub fn get_product_types (&self, name: &str) -> &ProductType {
+    #[no_mangle]
+    pub extern fn get_product_types (&self, name: &str) -> &ProductType {
         &self.products.get(name).unwrap().types
     }
 
-    pub fn tst_set_product_supply(&mut self, name: &str, count: usize) {
+    #[no_mangle]
+    pub extern fn tst_set_product_supply(&mut self, name: &str, count: usize) {
         self.products.get_mut(name).unwrap().supply = count;
     }
 
-    pub fn tst_get_material_params(&self, name: &str) -> &Material {
+    #[no_mangle]
+    pub extern fn tst_get_material_params(&self, name: &str) -> &Material {
         self.materials.get(name).unwrap()
     }
 
-    pub fn tst_get_materials(&self) -> &HashMap<String, Material> {
+    #[no_mangle]
+    pub extern fn tst_get_materials(&self) -> &HashMap<String, Material> {
         &self.materials
     }
 
-    pub fn tst_get_products(&self) -> &HashMap<String, Product> {
+    #[no_mangle]
+    pub extern fn tst_get_products(&self) -> &HashMap<String, Product> {
         &self.products
     }
 
@@ -205,7 +220,8 @@ fn manufacture_product(product: &mut Product, material: &mut Material, amount: &
     //product.demand -= count;
 }
 
-pub fn init() -> Instance {
+#[no_mangle]
+pub extern fn init() -> Instance {
     Instance {
         materials: HashMap::new(),
         products: HashMap::new(),
