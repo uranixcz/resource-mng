@@ -22,6 +22,7 @@ mod event_generator;
 
 use std::{thread, time};
 use std::env;
+use rand::Rng;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -43,39 +44,98 @@ fn main() {
     let mut f2_count: usize = 0;
     let mut f3_count: usize = 0;
     let time = time::Duration::from_millis(millis);
+    let mut fn_num;
+    let max_values: usize = 512;
+    let mut evgen;
 
     while num < cycles {
-        match event_generator::run(&mut instance, &mut rng, 512) {
-            Ok(result) => {
-                match result.function_number {
-                    0 => {
-                        println!("[{}] Adding material \"{}\", supply: {}", num, result.name, result.amount);
-                        f0_count +=1;
+        fn_num = rng.gen::<u8>() % 4;
+        evgen = event_generator::run(&mut instance, &fn_num, &mut rng, &max_values);
+        match fn_num {
+            0 => {
+                match evgen {
+                    Ok(result) => {
+                        println!("[{}] Adding material \"{}\", supply: {}",
+                                 num, result.name, result.amount);
+                        f0_count += 1;
                     },
-                    1 => {
-                        println!("[{}] Adding product \"{}\" composed of {}x material \"{}\"", num, result.name, result.amount, result.material_id);
+                    Err(&1) => {
+                        println!("[{}] Adding material failed. \
+                        Name cannot be empty or contain only white spaces.", num);
+                    },
+                    Err(&2) => {
+                        println!("[{}] Adding material failed. \
+                        Supply cannot be zero.", num);
+                    },
+                    Err(&3) => {
+                        println!("[{}] Adding material failed. \
+                        Material already in database.", num);
+                    },
+                    Err(_) => {
+                        println!("[{}] Adding material failed. \
+                        Unknown error.", num);
+                    }
+                }
+            },
+            1 => {
+                match evgen {
+                    Ok(result) => {
+                        println!("[{}] Adding product \"{}\" composed of {}x material \"{}\"",
+                                 num, result.name, result.amount, result.material_id);
                         f1_count +=1;
                     },
-                    2 => {
+                    Err(_) => { //fix me
+                        println!("[{}] Adding product failed. Could not add product.", num);
+                    }
+                }
+            },
+            2 => {
+                match evgen {
+                    Ok(result) => {
                         println!("[{}] Manufacturing product \"{} \"\
                     at the cost of material {}x \"{}\"",
                                  num, result.name, result.amount, result.material_id);
                         f2_count +=1;
                     },
-                    3 => {
-                        println!("[{}] Updating supply of material \"{}\" to {}", num, result.name, result.amount);
+                    Err(&1) => {
+                        println!("[{}] Manufacturing product failed. \
+                        Product count cannot be zero.", num);
+                    },
+                    Err(_) => {
+                        println!("[{}] Manufacturing product failed. \
+                        Unknown error.", num);
+                    }
+                }
+            },
+            3 => {
+                match evgen {
+                    Ok(result) => {
+                        println!("[{}] Updating supply of material \"{}\" to {}",
+                                 num, result.name, result.amount);
                         f3_count +=1;
                     },
-                    _ => {}
+                    Err(&1) => {
+                        println!("[{}] Updating supply of material failed. \
+                        No materials in database.", num);
+                    },
+                    Err(&2) => { //fix me never happens
+                        println!("[{}] Updating supply of material failed. \
+                        Supply update failed.", num);
+                    },
+                    Err(_) => {
+                        println!("[{}] Updating supply of material failed. \
+                        Unknown error.", num);
+                    }
                 }
-            }
-            Err(e) => { println!("[{}] {}", num, e) }
+            },
+            _ => { panic!("Out of range.")}
         }
+
         num += 1;
         thread::sleep(time);
     }
     println!("\nProgramme ends at cycle {}.\n\
-    f0 count: {}, f1 count: {}, f2 count: {}, f3 count: {}",
+    Pass counts for fn Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
              num, f0_count, f1_count, f2_count, f3_count);
 
 }

@@ -60,28 +60,26 @@ pub struct Instance {
 
 impl Instance {
     #[no_mangle]
-    pub extern fn add_material(&mut self, name: String, supply: usize) -> bool {
-        if name.trim().is_empty() || supply == 0 {
-            false }
-        else {
-            if !self.materials.contains_key(&name) {
-                self.materials.insert(name.clone(),Material{
-                    //name,
-                    scarcity: 0,
-                    demand: 0,
-                    supply,
-                    //deposit_size,
-                });
-                //println!("{:?}", self.materials.get(&name).unwrap());
-                true
-            } else {
-                false
-            }
-        }
+    pub extern fn add_material(&mut self, name: String, supply: usize) -> u8 {
+        if name.trim().is_empty() { return 1; }
+        if supply == 0 { return 2; }
+
+        if !self.materials.contains_key(&name) {
+            self.materials.insert(name.clone(),Material{
+                //name,
+                scarcity: 0,
+                demand: 0,
+                supply,
+                //deposit_size,
+            });
+            0 //ok
+        } else { 3 }
+
     }
 
     #[no_mangle]
-    pub extern fn add_product(&mut self, name: String, material_id: String, work_complexity: u8, material_amount: usize) -> bool {
+    pub extern fn add_product(&mut self, name: String, material_id: String,
+                              work_complexity: u8, material_amount: usize) -> bool {
         if name.trim().is_empty()
             || material_id.trim().is_empty()
             || material_amount == 0
@@ -149,15 +147,6 @@ impl Instance {
 
     //pub fn update_material_deposit_size() {}
 
-
-    /*fn search_material(&mut self, name: &str) -> Option<&mut Material> {
-        for mat in self.materials.iter_mut() {
-            if mat.name == name {
-                return Some(mat)
-            }
-        }
-        None
-    }*/
     #[no_mangle]
     pub extern fn get_material_count (&self) -> usize {
         self.materials.len()
@@ -195,24 +184,6 @@ impl Instance {
 
 }
 
-/*fn search_product<'products>(products: &'products Vec<Product>, name: &str) -> Option<&'products Product> {
-    for prod in products.iter() {
-        if prod.name == name {
-            return Some(prod)
-        }
-    }
-    None
-}
-
-fn search_material<'materials>(materials: &'materials mut Vec<Material>, name: &str) -> Option<&'materials mut Material> {
-    for mat in materials.iter_mut() {
-        if mat.name == name {
-            return Some(mat)
-        }
-    }
-    None
-}*/
-
 fn manufacture_product(product: &mut Product, material: &mut Material, amount: &usize) {
     material.supply -= product.types.material_amount.1 * amount;
     material.demand -= product.types.material_amount.1 * amount;
@@ -225,6 +196,15 @@ pub extern fn init() -> Instance {
     Instance {
         materials: HashMap::new(),
         products: HashMap::new(),
+    }
+}
+
+#[no_mangle]
+pub extern fn load(materials: HashMap<String, Material>,
+                   products: HashMap<String, Product>) -> Instance {
+    Instance {
+        materials,
+        products,
     }
 }
 

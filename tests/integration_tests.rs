@@ -1,7 +1,7 @@
 extern crate resource_mng;
 
 #[test]
-fn demand_enough_prod() {
+fn order_enough_prod() {
     let mut instance = resource_mng::init();
 
     instance.add_material(String::from("ore"),80);
@@ -11,7 +11,7 @@ fn demand_enough_prod() {
 }
 
 #[test]
-fn demand_enough_mat() {
+fn order_enough_mat() {
     let mut instance = resource_mng::init();
 
     instance.add_material(String::from("ore"),80);
@@ -20,7 +20,7 @@ fn demand_enough_mat() {
 }
 
 #[test]
-fn demand_nenough_mat() {
+fn order_nenough_mat() {
     let mut instance = resource_mng::init();
 
     instance.add_material(String::from("ore"),79);
@@ -29,7 +29,7 @@ fn demand_nenough_mat() {
 }
 
 #[test]
-fn demand_two_same_mat() {
+fn order_two_same_mat() {
     let mut instance = resource_mng::init();
 
     instance.add_material(String::from("wood"),80);
