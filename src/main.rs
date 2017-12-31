@@ -55,7 +55,7 @@ fn main() {
             0 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Adding material \"{}\", supply: {}",
+                        println!("[{}] Adding material \"{}\" to the database, supply: {}",
                                  num, result.name, result.amount);
                         f0_count += 1;
                     },
@@ -64,12 +64,12 @@ fn main() {
                         Name cannot be empty or contain only white spaces.", num);
                     },
                     Err(&2) => {
-                        println!("[{}] Adding material failed. \
-                        Supply cannot be zero.", num);
+                        //println!("[{}] Adding material failed. \
+                        //Supply cannot be zero.", num);
                     },
                     Err(&3) => {
-                        println!("[{}] Adding material failed. \
-                        Material already in database.", num);
+                        //println!("[{}] Adding material failed. \
+                        //Material already in database.", num);
                     },
                     Err(_) => {
                         println!("[{}] Adding material failed. \
@@ -80,26 +80,65 @@ fn main() {
             1 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Adding product \"{}\" composed of {}x material \"{}\"",
-                                 num, result.name, result.amount, result.material_id);
+                        println!("[{}] Adding product \"{}\" composed of {}x material \"{}\" \
+                        to the database", num, result.name, result.amount, result.material_id);
                         f1_count +=1;
                     },
-                    Err(_) => { //fix me
-                        println!("[{}] Adding product failed. Could not add product.", num);
+                    Err(&1) => {
+                        //println!("[{}] Adding product failed. \
+                        //Product name cannot be empty or contain only white spaces.", num);
+                    }
+                    Err(&2) => {
+                        //println!("[{}] Adding product failed. \
+                        //Material name cannot be empty or contain only white spaces.", num);
+                    }
+                    Err(&3) => {
+                        //println!("[{}] Adding product failed. \
+                        //Material amount required must not be zero.", num);
+                    }
+                    Err(&4) => {
+                        println!("[{}] Adding product failed. \
+                        Material does not exist.", num);
+                    }
+                    Err(&5) => {
+                        //println!("[{}] Adding product failed. \
+                        //Product already exists.", num);
+                    }
+                    Err(_) => {
+                        println!("[{}] Adding product failed. Unknown error.", num);
                     }
                 }
             },
             2 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Manufacturing product \"{} \"\
-                    at the cost of material {}x \"{}\"",
-                                 num, result.name, result.amount, result.material_id);
+                        if result.code != &4 {
+                            println!("[{}] Manufacturing product \"{}\" \
+                    at the cost of {}x material \"{}\", scarcity: {}",
+                                     num, result.name, result.amount, result.material_id,
+                                     instance.get_material_scarcity(&result.material_id));
+                        } else {
+                            println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
+                        Material \"{}\" scarce: {} > 50.", num, result.amount, result.name, result.material_id,
+                                     instance.get_material_scarcity(&result.material_id));
+                        }
                         f2_count +=1;
                     },
-                    Err(&1) => {
+                    Err(&2) => {
+                        //println!("[{}] Manufacturing product failed. \
+                        //Cannot order 0 products.", num);
+                    },
+                    Err(&3) => {
+                        //println!("[{}] Manufacturing product failed. \
+                        //No such material in database.", num);
+                    },
+                    Err(&4) => {
                         println!("[{}] Manufacturing product failed. \
-                        Product count cannot be zero.", num);
+                        Material scarce.", num); //safeguard for future code changes
+                    },
+                    Err(&5) => {
+                        //println!("[{}] Manufacturing product failed. \
+                        //Product database is empty.", num);
                     },
                     Err(_) => {
                         println!("[{}] Manufacturing product failed. \
@@ -110,15 +149,18 @@ fn main() {
             3 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Updating supply of material \"{}\" to {}",
-                                 num, result.name, result.amount);
+                        println!("[{}] Updating supply of material \"{}\" to {}; \
+                        demand: {}, scarcity: {}", num, result.name, result.amount,
+                                 0,//instance.get_material_demand(&result.name), //gives no results atm
+                                 0,//instance.tst_get_material(&result.name).calculate_scarcity()
+                                 );
                         f3_count +=1;
                     },
                     Err(&1) => {
                         println!("[{}] Updating supply of material failed. \
                         No materials in database.", num);
                     },
-                    Err(&2) => { //fix me never happens
+                    Err(&2) => {
                         println!("[{}] Updating supply of material failed. \
                         Supply update failed.", num);
                     },
@@ -134,8 +176,8 @@ fn main() {
         num += 1;
         thread::sleep(time);
     }
-    println!("\nProgramme ends at cycle {}.\n\
-    Pass counts for fn Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
+    println!("\nProgram ends at cycle {}.\n\
+    Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
              num, f0_count, f1_count, f2_count, f3_count);
 
 }

@@ -45,8 +45,8 @@ pub struct Material {
 }
 
 impl Material {
-    fn calculate_scarcity(&mut self) { //100/2=50
-        self.scarcity = if self.supply != 0 {
+    pub extern fn calculate_scarcity(&self) -> usize { //100/2=50
+        if self.supply != 0 {
             self.demand * 50 / (self.supply /*+ self.deposit_size*/)
         } else { usize::max_value() }
     }
@@ -60,9 +60,9 @@ pub struct Instance {
 
 impl Instance {
     #[no_mangle]
-    pub extern fn add_material(&mut self, name: String, supply: usize) -> u8 {
-        if name.trim().is_empty() { return 1; }
-        if supply == 0 { return 2; }
+    pub extern fn add_material(&mut self, name: String, supply: usize) -> &'static u8 {
+        if name.trim().is_empty() { return &1; }
+        if supply == 0 { return &2; }
 
         if !self.materials.contains_key(&name) {
             self.materials.insert(name.clone(),Material{
@@ -72,62 +72,57 @@ impl Instance {
                 supply,
                 //deposit_size,
             });
-            0 //ok
-        } else { 3 }
+            &0 //ok
+        } else { &3 }
 
     }
 
     #[no_mangle]
     pub extern fn add_product(&mut self, name: String, material_id: String,
-                              work_complexity: u8, material_amount: usize) -> bool {
-        if name.trim().is_empty()
-            || material_id.trim().is_empty()
-            || material_amount == 0
-            || !self.materials.contains_key(&material_id)
-            || self.products.contains_key(&name) {
-                false
-            }
-        else {
-            self.products.insert(name.clone(), Product{
-                //name,
-                types: ProductType {
-                    material_amount: (material_id, material_amount),
-                    work_complexity,
-                },
-                supply: 0,
-                demand: 0,
-            });
-            //println!("{:?}", self.products.get(&name).unwrap());
-            true
-        }
+                              work_complexity: u8, material_amount: usize) -> &'static u8 {
+        if name.trim().is_empty() { return &1 }
+        if material_id.trim().is_empty() { return &2 }
+        if material_amount == 0 { return &3 }
+        if !self.materials.contains_key(&material_id) { return &4 }
+        if self.products.contains_key(&name) { return &5 }
+        self.products.insert(name.clone(), Product{
+            //name,
+            types: ProductType {
+                material_amount: (material_id, material_amount),
+                work_complexity,
+            },
+            supply: 0,
+            demand: 0,
+        });
+        &0
     }
 
     #[no_mangle]
-    pub extern fn order_product(&mut self, name: &str, amount: usize) -> Result<bool, &'static str> {
-        if amount == 0 { return Err("Cannot order 0 products.")}
+    pub extern fn order_product(&mut self, name: &str, amount: usize) -> &'static u8 {
+        if amount == 0 { return &2}
         let prod = self.products.get_mut(name).unwrap();
         let mat = match self.materials.get_mut(&prod.types.material_amount.0) {
             Some(m) => m,
-            None => return Err("No such material in database."),
+            None => return &3, //No such material in database.
         };
         prod.demand += amount;
         mat.demand += amount * prod.types.material_amount.1;
-        mat.calculate_scarcity();
+        mat.scarcity = mat.calculate_scarcity();
         if amount <= prod.supply {
             prod.supply -= amount;
             prod.demand -= amount;
-            return Ok(true)
+            return &0 //ok
         } else {
             if mat.scarcity > 50 || mat.supply < (amount * prod.types.material_amount.1)
                 { mat.demand -= amount * prod.types.material_amount.1;
-                    return Err("Material scarce.");
+                    return &4; //Material scarce.
                 }
             { //for now we immediately produce product and deliver it
                 manufacture_product(prod, mat, &amount);
                 prod.supply -= amount;
                 prod.demand -= amount;
             }
-            return Ok(false)
+            return &1 //manufacture
         }
 
     }
@@ -153,6 +148,21 @@ impl Instance {
     }
 
     #[no_mangle]
+    pub extern fn get_material_demand (&self, name: &str) -> usize {
+        self.materials.get(name).unwrap().demand
+    }
+
+    #[no_mangle]
+    pub extern fn get_material_supply (&self, name: &str) -> usize {
+        self.materials.get(name).unwrap().supply
+    }
+
+    #[no_mangle]
+    pub extern fn get_material_scarcity (&mut self, name: &str) -> usize {
+        self.materials.get_mut(name).unwrap().scarcity
+    }
+
+    #[no_mangle]
     pub extern fn get_product_count (&self) -> usize {
         self.products.len()
     }
@@ -168,7 +178,7 @@ impl Instance {
     }
 
     #[no_mangle]
-    pub extern fn tst_get_material_params(&self, name: &str) -> &Material {
+    pub extern fn tst_get_material(&self, name: &str) -> &Material {
         self.materials.get(name).unwrap()
     }
 
@@ -223,15 +233,22 @@ mod tests {
     #[test]
     fn add_product_without_material() {
         let mut instance = init();
-        assert!(!instance.add_product(String::from("bla"), String::from("mat"), 5, 10));
+        assert_ne!(!instance.add_product(String::from("bla"), String::from("mat"), 5, 10),0);
     }
 
     #[test]
     fn add_same_product() {
         let mut instance = init();
         instance.add_material(String::from("bla"), 8);
-        instance.add_product(String::from("bla"), String::from("bla"), 5, 10);
-        instance.add_product(String::from("bla"), String::from("bla"), 0, 5);
-        assert_eq!(instance.products.get("bla").unwrap().types.material_amount.1, 10);
+        instance.add_product(String::from("blah"), String::from("bla"), 5, 10);
+        instance.add_product(String::from("blah"), String::from("bla"), 0, 5);
+        assert_eq!(instance.products.get("blah").unwrap().types.material_amount.1, 10);
+    }
+
+    #[test]
+    fn add_prod_zero_mat() {
+        let mut instance = init();
+        instance.add_material(String::from("bla"), 8);
+        assert_ne!(instance.add_product(String::from("bla"), String::from("bla"), 5, 0), &0);
     }
 }

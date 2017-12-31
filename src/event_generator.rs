@@ -20,6 +20,7 @@ use rand::ThreadRng;
 use resource_mng::Instance;
 
 pub struct RunResult {
+    pub code: &'static u8,
     pub name: String,
     pub amount: usize,
     pub material_id: String,
@@ -31,21 +32,19 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             let name = rng.gen::<u16>().to_string();
             let supply = rng.gen::<usize>() % max_values;
             match instance.add_material(name.clone(), supply) {
-                0 => {
-                Ok(RunResult {
-                    name,
-                    amount: supply,
-                    material_id: String::new()
-                })},
-                1 => { Err(&1) },
-                2 => { Err(&2)},
-                3 => { Err(&3)},
-                _ => { Err(&255)},
+                &0 => {
+                    Ok(RunResult {
+                        code: &0,
+                        name,
+                        amount: supply,
+                        material_id: String::from("none")
+                    })},
+                num => { Err(num) },
             }
         }
         &1 => { // add product
             let name = rng.gen::<u16>().to_string();
-            let material_amount = rng.gen::<usize>() % max_values /64;
+            let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % instance.get_material_count();
             let material_id = instance.tst_get_materials().iter().enumerate()
                 .nth(rnd_index)
@@ -53,20 +52,22 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 .1
                 .0.clone();
             let work_complexity = rng.gen::<u8>();
-            if instance.add_product(name.clone(), material_id.clone(), work_complexity, material_amount) {
-                Ok(RunResult {
+            match instance.add_product(name.clone(), material_id.clone(), work_complexity, material_amount) {
+                &0 => Ok(RunResult {
+                    code: &0,
                     name,
                     amount: material_amount,
                     material_id
-                })
-            } else { Err(&1) } //"Could not add product"
+                }),
+                num => { Err(num) } //"Could not add product"
+            }
         }
         &2 => { // order product
-            let amount = rng.gen::<usize>() % max_values /64;
+            let amount = rng.gen::<usize>() % max_values /48;
             let product_count = instance.get_product_count();
             let rnd_index = if product_count > 0 {
                 rng.gen::<usize>() % product_count
-            } else { return Err(&1) }; //"Product count cannot be zero"
+            } else { return Err(&5) }; //"Product database is empty."
             let name = instance.tst_get_products().iter().enumerate()
                 .nth(rnd_index)
                 .unwrap()
@@ -77,17 +78,26 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             tmp1 = tmp.0.clone();
             tmp2 = tmp.1;} //fix me
             match instance.order_product(&name, amount) {
-                Ok(_) => {
+                &1 => { //&0 not active atm
                     //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();
                     Ok(RunResult {
-                    name: name.clone(),
-                    amount: amount * tmp2,
-                    material_id: tmp1,
-                })},
-                Err(_) => {
-                    Err(&255)
+                        code: &1,
+                        name: name.clone(),
+                        amount: amount * tmp2,
+                        material_id: tmp1,
+                    })},
+                &4 => {
+                    Ok(RunResult {
+                        code: &4,
+                        name: name.clone(),
+                        amount,
+                        material_id: tmp1,
+                    })},
+                num => {
+                    Err(num)
                 },
             }
+
         }
         &3 => { // update supply
             let amount = rng.gen::<usize>() % max_values;
@@ -102,6 +112,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 .0.clone();
             if instance.update_supply(&name, amount) {
                 Ok(RunResult {
+                    code: &0,
                     name,
                     amount,
                     material_id: String::new(),
