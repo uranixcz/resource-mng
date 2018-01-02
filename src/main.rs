@@ -32,8 +32,8 @@ fn main() {
         cycles = args[1].parse().unwrap();
         millis = args[2].parse().unwrap();
     } else {
-        cycles = 500;
-        millis = 3000;
+        cycles = 5000;
+        millis = 0;
     }
     let mut rng = rand::thread_rng();
     let mut instance = resource_mng::init();
@@ -43,12 +43,14 @@ fn main() {
     let mut f1_count: usize = 0;
     let mut f2_count: usize = 0;
     let mut f3_count: usize = 0;
+    let mut failed_scarce: usize = 0;
+    let mut failed_no_supply: usize = 0;
     let time = time::Duration::from_millis(millis);
     let mut fn_num;
     let max_values: usize = 512;
     let mut evgen;
 
-    while num < cycles {
+    while num < cycles || cycles == 0 {
         fn_num = rng.gen::<u8>() % 4;
         evgen = event_generator::run(&mut instance, &fn_num, &mut rng, &max_values);
         match fn_num {
@@ -112,15 +114,23 @@ fn main() {
             2 => {
                 match evgen {
                     Ok(result) => {
-                        if result.code != &4 {
-                            println!("[{}] Manufacturing product \"{}\" \
-                    at the cost of {}x material \"{}\", scarcity: {}",
-                                     num, result.name, result.amount, result.material_id,
-                                     instance.get_material_scarcity(&result.material_id));
-                        } else {
-                            println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
+                        //let tmp = instance.get_material_scarcity(&result.material_id);
+                        match result.code {
+                            &4 => {
+                                println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
+                        Material \"{}\" not available; scarcity: {}", num, result.amount, result.name, result.material_id,
+                                         instance.get_material_scarcity(&result.material_id));
+                                failed_no_supply +=1;
+                            },
+                            &5 => { println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
                         Material \"{}\" scarce: {} > 50.", num, result.amount, result.name, result.material_id,
-                                     instance.get_material_scarcity(&result.material_id));
+                                           instance.get_material_scarcity(&result.material_id));
+                                failed_scarce +=1;
+                            },
+                            &_ => println!("[{}] Manufacturing product \"{}\" \
+                        at the cost of {}x material \"{}\", scarcity: {}",
+                                           num, result.name, result.amount, result.material_id,
+                                           instance.get_material_scarcity(&result.material_id)),
                         }
                         f2_count +=1;
                     },
@@ -134,9 +144,15 @@ fn main() {
                     },
                     Err(&4) => {
                         println!("[{}] Manufacturing product failed. \
-                        Material scarce.", num); //safeguard for future code changes
+                        Material not available.", num); //safeguard for future code changes
+                        panic!("Material not available.");
                     },
                     Err(&5) => {
+                        println!("[{}] Manufacturing product failed. \
+                        Material scarce.", num); //safeguard for future code changes
+                        panic!("Material scarce.");
+                    },
+                    Err(&6) => {
                         //println!("[{}] Manufacturing product failed. \
                         //Product database is empty.", num);
                     },
@@ -151,8 +167,8 @@ fn main() {
                     Ok(result) => {
                         println!("[{}] Updating supply of material \"{}\" to {}; \
                         demand: {}, scarcity: {}", num, result.name, result.amount,
-                                 0,//instance.get_material_demand(&result.name), //gives no results atm
-                                 0,//instance.tst_get_material(&result.name).calculate_scarcity()
+                                 instance.get_material_demand(&result.name),
+                                 instance.tst_get_material(&result.name).calculate_scarcity()
                                  );
                         f3_count +=1;
                     },
@@ -174,10 +190,11 @@ fn main() {
         }
 
         num += 1;
-        thread::sleep(time);
+        if millis != 0 { thread::sleep(time); }
     }
     println!("\nProgram ends at cycle {}.\n\
     Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
              num, f0_count, f1_count, f2_count, f3_count);
+    println!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
 
 }

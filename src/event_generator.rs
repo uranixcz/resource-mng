@@ -67,7 +67,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             let product_count = instance.get_product_count();
             let rnd_index = if product_count > 0 {
                 rng.gen::<usize>() % product_count
-            } else { return Err(&5) }; //"Product database is empty."
+            } else { return Err(&6) }; //"Product database is empty."
             let name = instance.tst_get_products().iter().enumerate()
                 .nth(rnd_index)
                 .unwrap()
@@ -89,6 +89,13 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 &4 => {
                     Ok(RunResult {
                         code: &4,
+                        name: name.clone(),
+                        amount,
+                        material_id: tmp1,
+                    })},
+                &5 => {
+                    Ok(RunResult {
+                        code: &5,
                         name: name.clone(),
                         amount,
                         material_id: tmp1,

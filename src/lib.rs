@@ -113,13 +113,18 @@ impl Instance {
             prod.demand -= amount;
             return &0 //ok
         } else {
-            if mat.scarcity > 50 || mat.supply < (amount * prod.types.material_amount.1)
-                { mat.demand -= amount * prod.types.material_amount.1;
-                    return &4; //Material scarce.
+            if mat.supply < (amount * prod.types.material_amount.1)
+                { //mat.demand -= amount * prod.types.material_amount.1;
+                    return &4; //Material not available.
+                }
+            if mat.scarcity > 50
+                { //mat.demand -= amount * prod.types.material_amount.1;
+                    return &5; //Material scarce.
+
                 }
             { //for now we immediately produce product and deliver it
                 manufacture_product(prod, mat, &amount);
-                prod.supply -= amount;
+                prod.supply -= amount; //this is delivery
                 prod.demand -= amount;
             }
             return &1 //manufacture
