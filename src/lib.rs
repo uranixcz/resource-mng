@@ -52,6 +52,20 @@ impl Material {
     }
 }
 
+impl Product {
+    fn manufacture(&mut self, material: &mut Material, amount: &usize) {
+        material.supply -= self.types.material_amount.1 * amount;
+        material.demand -= self.types.material_amount.1 * amount;
+        self.supply += amount;
+        //product.demand -= count;
+    }
+
+    fn deliver (&mut self, amount: &usize) {
+        self.supply -= amount;
+        self.demand -= amount;
+    }
+}
+
 #[repr(C)]
 pub struct Instance {
     materials: HashMap<String,Material>,
@@ -101,31 +115,30 @@ impl Instance {
     pub extern fn order_product(&mut self, name: &str, amount: usize) -> &'static u8 {
         if amount == 0 { return &2}
         let prod = self.products.get_mut(name).unwrap();
-        let mat = match self.materials.get_mut(&prod.types.material_amount.0) {
+        let material = match self.materials.get_mut(&prod.types.material_amount.0) {
             Some(m) => m,
             None => return &3, //No such material in database.
         };
         prod.demand += amount;
-        mat.demand += amount * prod.types.material_amount.1;
-        mat.scarcity = mat.calculate_scarcity();
+        material.demand += amount * prod.types.material_amount.1;
+        material.scarcity = material.calculate_scarcity();
         if amount <= prod.supply {
             prod.supply -= amount;
             prod.demand -= amount;
             return &0 //ok
         } else {
-            if mat.supply < (amount * prod.types.material_amount.1)
+            if material.supply < (amount * prod.types.material_amount.1)
                 { //mat.demand -= amount * prod.types.material_amount.1;
                     return &4; //Material not available.
                 }
-            if mat.scarcity > 50
+            if material.scarcity > 50
                 { //mat.demand -= amount * prod.types.material_amount.1;
                     return &5; //Material scarce.
 
                 }
             { //for now we immediately produce product and deliver it
-                manufacture_product(prod, mat, &amount);
-                prod.supply -= amount; //this is delivery
-                prod.demand -= amount;
+                prod.manufacture(material, &amount);
+                prod.deliver(&amount);
             }
             return &1 //manufacture
         }
@@ -199,12 +212,12 @@ impl Instance {
 
 }
 
-fn manufacture_product(product: &mut Product, material: &mut Material, amount: &usize) {
+/*fn manufacture_product(product: &mut Product, material: &mut Material, amount: &usize) {
     material.supply -= product.types.material_amount.1 * amount;
     material.demand -= product.types.material_amount.1 * amount;
     product.supply += amount;
     //product.demand -= count;
-}
+}*/
 
 #[no_mangle]
 pub extern fn init() -> Instance {
