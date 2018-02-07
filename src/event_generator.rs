@@ -46,13 +46,15 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             let name = rng.gen::<u16>().to_string();
             let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % instance.get_material_count();
+            let priority = rng.gen::<usize>() % 4;
             let material_id = instance.tst_get_materials().iter().enumerate()
                 .nth(rnd_index)
                 .unwrap()
                 .1
                 .0.clone();
             let work_complexity = rng.gen::<u8>();
-            match instance.add_product(name.clone(), material_id.clone(), work_complexity, material_amount) {
+            match instance.add_product(name.clone(), material_id.clone(),
+                                       work_complexity, material_amount, priority) {
                 &0 => Ok(RunResult {
                     code: &0,
                     name,

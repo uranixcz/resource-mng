@@ -196,5 +196,5 @@ fn main() {
     Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
              num, f0_count, f1_count, f2_count, f3_count);
     println!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
-
+    thread::sleep(time::Duration::from_secs(60));
 }

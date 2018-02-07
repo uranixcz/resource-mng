@@ -25,6 +25,7 @@ pub struct Product {
     //scarcity: usize,
     supply: usize,
     demand: usize,
+    priority: usize,
 }
 
 #[derive(Debug)]
@@ -67,12 +68,13 @@ impl Product {
 }
 
 #[repr(C)]
-pub struct Instance {
+pub struct Instance<'a> {
     materials: HashMap<String,Material>,
     products: HashMap<String,Product>,
+    production_queue: [Vec<&'a Product>; 4],
 }
 
-impl Instance {
+impl<'a> Instance<'a> {
     #[no_mangle]
     pub extern fn add_material(&mut self, name: String, supply: usize) -> &'static u8 {
         if name.trim().is_empty() { return &1; }
@@ -93,7 +95,8 @@ impl Instance {
 
     #[no_mangle]
     pub extern fn add_product(&mut self, name: String, material_id: String,
-                              work_complexity: u8, material_amount: usize) -> &'static u8 {
+                              work_complexity: u8, material_amount: usize,
+                              priority: usize) -> &'static u8 {
         if name.trim().is_empty() { return &1 }
         if material_id.trim().is_empty() { return &2 }
         if material_amount == 0 { return &3 }
@@ -107,6 +110,7 @@ impl Instance {
             },
             supply: 0,
             demand: 0,
+            priority,
         });
         &0
     }
@@ -129,6 +133,8 @@ impl Instance {
         } else {
             if material.supply < (amount * prod.types.material_amount.1)
                 { //mat.demand -= amount * prod.types.material_amount.1;
+                    //self.production_queue[prod.priority].push(&prod);
+
                     return &4; //Material not available.
                 }
             if material.scarcity > 50
@@ -141,6 +147,9 @@ impl Instance {
                 prod.deliver(&amount);
             }
             return &1 //manufacture
+        }
+
+        fn add_product_to_queue() {
         }
 
     }
@@ -220,19 +229,22 @@ impl Instance {
 }*/
 
 #[no_mangle]
-pub extern fn init() -> Instance {
+pub extern fn init<'a>() -> Instance<'a> {
     Instance {
         materials: HashMap::new(),
         products: HashMap::new(),
+        production_queue: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
     }
 }
 
 #[no_mangle]
-pub extern fn load(materials: HashMap<String, Material>,
-                   products: HashMap<String, Product>) -> Instance {
+pub extern fn load<'a>(materials: HashMap<String, Material>,
+                       products: HashMap<String, Product>,
+                       production_queue: [Vec<&'a Product>; 4]) -> Instance<'a> {
     Instance {
         materials,
         products,
+        production_queue,
     }
 }
 
@@ -251,15 +263,15 @@ mod tests {
     #[test]
     fn add_product_without_material() {
         let mut instance = init();
-        assert_ne!(!instance.add_product(String::from("bla"), String::from("mat"), 5, 10),0);
+        assert_ne!(!instance.add_product(String::from("bla"), String::from("mat"), 5, 10, 0),0);
     }
 
     #[test]
     fn add_same_product() {
         let mut instance = init();
         instance.add_material(String::from("bla"), 8);
-        instance.add_product(String::from("blah"), String::from("bla"), 5, 10);
-        instance.add_product(String::from("blah"), String::from("bla"), 0, 5);
+        instance.add_product(String::from("blah"), String::from("bla"), 5, 10, 0);
+        instance.add_product(String::from("blah"), String::from("bla"), 0, 5, 0);
         assert_eq!(instance.products.get("blah").unwrap().types.material_amount.1, 10);
     }
 
@@ -267,6 +279,6 @@ mod tests {
     fn add_prod_zero_mat() {
         let mut instance = init();
         instance.add_material(String::from("bla"), 8);
-        assert_ne!(instance.add_product(String::from("bla"), String::from("bla"), 5, 0), &0);
+        assert_ne!(instance.add_product(String::from("bla"), String::from("bla"), 5, 0, 0), &0);
     }
 }

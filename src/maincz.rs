@@ -37,7 +37,7 @@ fn main() {
     }
     let mut rng = rand::thread_rng();
     let mut instance = resource_mng::init();
-    instance.add_material(String::from("first"), 10);
+    instance.add_material(String::from("první"), 10);
     let mut num: usize = 0;
     let mut f0_count: usize = 0;
     let mut f1_count: usize = 0;
@@ -193,8 +193,8 @@ fn main() {
         if millis != 0 { thread::sleep(time); }
     }
     println!("\nProgram skončil v cyklu {}.\n\
-    Dokončené funkce | Přidej materiál: {}, Přidej produkt: {}, Objednej produkt: {}, Aktualizuj nabídku: {}",
+    Vykonané funkce      | Přidej materiál: {}, Přidej produkt: {}, Objednej produkt: {}, Aktualizuj nabídku: {}",
              num, f0_count, f1_count, f2_count, f3_count);
-    println!("Neúspěšné objednávky    | nedostatečná nabídka: {}, vzácnost: {}", failed_no_supply, failed_scarce);
-
+    println!("Neúspěšné objednávky | nedostatečná nabídka: {}, vzácnost: {}", failed_no_supply, failed_scarce);
+    thread::sleep(time::Duration::from_secs(60));
 }
