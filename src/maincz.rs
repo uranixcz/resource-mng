@@ -32,7 +32,7 @@ fn main() {
         cycles = args[1].parse().unwrap();
         millis = args[2].parse().unwrap();
     } else {
-        cycles = 5000;
+        cycles = 500;
         millis = 0;
     }
     let mut rng = rand::thread_rng();
@@ -196,5 +196,4 @@ fn main() {
     Vykonané funkce      | Přidej materiál: {}, Přidej produkt: {}, Objednej produkt: {}, Aktualizuj nabídku: {}",
              num, f0_count, f1_count, f2_count, f3_count);
     println!("Neúspěšné objednávky | nedostatečná nabídka: {}, vzácnost: {}", failed_no_supply, failed_scarce);
-    thread::sleep(time::Duration::from_secs(60));
 }

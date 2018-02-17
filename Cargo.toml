@@ -1,18 +1,21 @@
 [package]
 name = "resource-mng"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Michal Mauser <michal.mauser@zeitgeistmovement.cz>"]
 
 [dependencies]
-rand = "0.3"
+rand = "0.4"
 
 [[bin]]
 name = "resmng-en"
 path = "src/main.rs"
+test = false
 
 [[bin]]
 name = "resmng-cz"
 path = "src/maincz.rs"
+test = false
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+doctest = false

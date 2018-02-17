@@ -32,11 +32,12 @@ fn main() {
         cycles = args[1].parse().unwrap();
         millis = args[2].parse().unwrap();
     } else {
-        cycles = 5000;
+        cycles = 500;
         millis = 0;
     }
     let mut rng = rand::thread_rng();
     let mut instance = resource_mng::init();
+    instance.verbose = true;
     instance.add_material(String::from("first"), 10);
     let mut num: usize = 0;
     let mut f0_count: usize = 0;
@@ -127,8 +128,8 @@ fn main() {
                                            instance.get_material_scarcity(&result.material_id));
                                 failed_scarce +=1;
                             },
-                            &_ => println!("[{}] Manufacturing product \"{}\" \
-                        at the cost of {}x material \"{}\", scarcity: {}",
+                            &_ => println!("[{}] Manufacturing product \"{}\" complete \
+                        at the cost of {}x material \"{}\"; scarcity: {}",
                                            num, result.name, result.amount, result.material_id,
                                            instance.get_material_scarcity(&result.material_id)),
                         }
@@ -196,5 +197,4 @@ fn main() {
     Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
              num, f0_count, f1_count, f2_count, f3_count);
     println!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
-    thread::sleep(time::Duration::from_secs(60));
 }

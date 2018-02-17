@@ -76,7 +76,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 .1
                 .0.clone();
             let tmp1; let tmp2;
-            {let tmp = &instance.get_product_types(&name).material_amount;
+            {let tmp = &instance.get_product_types(&name).material_and_amount;
             tmp1 = tmp.0.clone();
             tmp2 = tmp.1;} //fix me
             match instance.order_product(&name, amount) {

@@ -21,17 +21,32 @@ use std::collections::HashMap;
 #[repr(C)]
 pub struct Product {
     //name: String,
-    types: ProductType, //change to Vec in the future
+    variants: ProductVariant, //change to Vec in the future
     //scarcity: usize,
     supply: usize,
     demand: usize,
     priority: usize,
 }
 
+impl Product {
+    fn manufacture(&mut self, material: &mut Material, amount: &usize) {
+        //let material = materials.get_mut(&self.variants.material_amount.0).unwrap();
+        material.supply -= self.variants.material_and_amount.1 * amount;
+        material.demand -= self.variants.material_and_amount.1 * amount;
+        self.supply += amount;
+        //product.demand -= amount;
+    }
+
+    fn deliver (&mut self, amount: &usize) {
+        self.supply -= amount;
+        self.demand -= amount;
+    }
+}
+
 #[derive(Debug)]
 #[repr(C)]
-pub struct ProductType {
-    pub material_amount: (String, usize), //change to materials in the future
+pub struct ProductVariant {
+    pub material_and_amount: (String, usize), //change to materials in the future
     work_complexity: u8,
 }
 
@@ -53,28 +68,15 @@ impl Material {
     }
 }
 
-impl Product {
-    fn manufacture(&mut self, material: &mut Material, amount: &usize) {
-        material.supply -= self.types.material_amount.1 * amount;
-        material.demand -= self.types.material_amount.1 * amount;
-        self.supply += amount;
-        //product.demand -= count;
-    }
-
-    fn deliver (&mut self, amount: &usize) {
-        self.supply -= amount;
-        self.demand -= amount;
-    }
-}
-
 #[repr(C)]
-pub struct Instance<'a> {
+pub struct Instance {
     materials: HashMap<String,Material>,
     products: HashMap<String,Product>,
-    production_queue: [Vec<&'a Product>; 4],
+    production_queue: [Vec<(String, usize)>; 4],
+    pub verbose: bool,
 }
 
-impl<'a> Instance<'a> {
+impl Instance {
     #[no_mangle]
     pub extern fn add_material(&mut self, name: String, supply: usize) -> &'static u8 {
         if name.trim().is_empty() { return &1; }
@@ -104,8 +106,8 @@ impl<'a> Instance<'a> {
         if self.products.contains_key(&name) { return &5 }
         self.products.insert(name.clone(), Product{
             //name,
-            types: ProductType {
-                material_amount: (material_id, material_amount),
+            variants: ProductVariant {
+                material_and_amount: (material_id, material_amount),
                 work_complexity,
             },
             supply: 0,
@@ -118,40 +120,56 @@ impl<'a> Instance<'a> {
     #[no_mangle]
     pub extern fn order_product(&mut self, name: &str, amount: usize) -> &'static u8 {
         if amount == 0 { return &2}
-        let prod = self.products.get_mut(name).unwrap();
-        let material = match self.materials.get_mut(&prod.types.material_amount.0) {
+        let products = &mut self.products;
+        if products.len() == 0 { panic!("no products in database");}
+        let mut prod = products.remove(name).unwrap();
+        let production_queue = &mut self.production_queue;
+        let mut material = match self.materials.remove(&prod.variants.material_and_amount.0) {
             Some(m) => m,
             None => return &3, //No such material in database.
         };
         prod.demand += amount;
-        material.demand += amount * prod.types.material_amount.1;
+        material.demand += amount * prod.variants.material_and_amount.1;
         material.scarcity = material.calculate_scarcity();
+
         if amount <= prod.supply {
-            prod.supply -= amount;
-            prod.demand -= amount;
+            prod.deliver(&amount);
             return &0 //ok
         } else {
-            if material.supply < (amount * prod.types.material_amount.1)
+            let mut code = &1;
+            if material.supply < (amount * prod.variants.material_and_amount.1) //only a dev safeguard
                 { //mat.demand -= amount * prod.types.material_amount.1;
-                    //self.production_queue[prod.priority].push(&prod);
-
-                    return &4; //Material not available.
+                    code = &4; //Material not available.
                 }
             if material.scarcity > 50
                 { //mat.demand -= amount * prod.types.material_amount.1;
-                    return &5; //Material scarce.
-
+                    code = &5; //Material scarce.
                 }
-            { //for now we immediately produce product and deliver it
-                prod.manufacture(material, &amount);
-                prod.deliver(&amount);
+
+            production_queue[prod.priority].push((String::from(name), amount));
+            self.materials.insert(prod.variants.material_and_amount.0.clone(), material);
+            products.insert(String::from(name), prod);
+            for q in production_queue.iter_mut() {
+                let mut i:usize = 0;
+                //let mut to_remove = Vec::new();
+                while i != q.len() {
+                    let mut q_product = products.get_mut(&q[i].0).unwrap();
+                    let mut q_material = self.materials.get_mut(&q_product.variants.material_and_amount.0).unwrap();
+                    if q_material.supply >= q[i].1 * q_product.variants.material_and_amount.1 &&
+                        q_material.scarcity <= 50 {
+                        q_product.manufacture(q_material, &q[i].1);
+                        q_product.deliver(&q[i].1);
+                        //i.1 = 0;
+                        //to_remove.push(cnt);
+                        let tmp = q.remove(i);
+                        if self.verbose { println!(" • Manufacturing {}x product \"{}\" from priority {} production queue.", tmp.1, tmp.0, q_product.priority+1);}
+                    }
+                    else { i += 1; }
+                }
             }
-            return &1 //manufacture
-        }
 
-        fn add_product_to_queue() {
+            return code;
         }
-
     }
 
     //pub fn is_in_supply() {}
@@ -195,8 +213,8 @@ impl<'a> Instance<'a> {
     }
 
     #[no_mangle]
-    pub extern fn get_product_types (&self, name: &str) -> &ProductType {
-        &self.products.get(name).unwrap().types
+    pub extern fn get_product_types (&self, name: &str) -> &ProductVariant {
+        &self.products.get(name).unwrap().variants
     }
 
     #[no_mangle]
@@ -221,30 +239,26 @@ impl<'a> Instance<'a> {
 
 }
 
-/*fn manufacture_product(product: &mut Product, material: &mut Material, amount: &usize) {
-    material.supply -= product.types.material_amount.1 * amount;
-    material.demand -= product.types.material_amount.1 * amount;
-    product.supply += amount;
-    //product.demand -= count;
-}*/
-
 #[no_mangle]
-pub extern fn init<'a>() -> Instance<'a> {
+pub extern fn init() -> Instance {
     Instance {
         materials: HashMap::new(),
         products: HashMap::new(),
         production_queue: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+        verbose: false,
     }
 }
 
 #[no_mangle]
-pub extern fn load<'a>(materials: HashMap<String, Material>,
-                       products: HashMap<String, Product>,
-                       production_queue: [Vec<&'a Product>; 4]) -> Instance<'a> {
+pub extern fn load(materials: HashMap<String, Material>,
+                   products: HashMap<String, Product>,
+                   production_queue: [Vec<(String, usize)>; 4],
+                   verbose: bool) -> Instance {
     Instance {
         materials,
         products,
         production_queue,
+        verbose,
     }
 }
 
@@ -272,7 +286,7 @@ mod tests {
         instance.add_material(String::from("bla"), 8);
         instance.add_product(String::from("blah"), String::from("bla"), 5, 10, 0);
         instance.add_product(String::from("blah"), String::from("bla"), 0, 5, 0);
-        assert_eq!(instance.products.get("blah").unwrap().types.material_amount.1, 10);
+        assert_eq!(instance.products.get("blah").unwrap().variants.material_and_amount.1, 10);
     }
 
     #[test]
