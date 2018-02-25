@@ -1,5 +1,5 @@
 /*
-* Copyright 2017 Michal Mauser
+* Copyright 2017-2018 Michal Mauser
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License as published by
@@ -38,7 +38,6 @@ fn main() {
     let mut rng = rand::thread_rng();
     let mut instance = resource_mng::init();
     instance.verbose = true;
-    instance.add_material(String::from("first"), 10);
     let mut num: usize = 0;
     let mut f0_count: usize = 0;
     let mut f1_count: usize = 0;
@@ -51,8 +50,11 @@ fn main() {
     let max_values: usize = 512;
     let mut evgen;
 
+    println!("Generating initial database entries, please wait...");
+    event_generator::init(&mut instance, &mut rng, &max_values, &cycles);
+
     while num < cycles || cycles == 0 {
-        fn_num = rng.gen::<u8>() % 4;
+        fn_num = rng.gen::<u8>() % 10;
         evgen = event_generator::run(&mut instance, &fn_num, &mut rng, &max_values);
         match fn_num {
             0 => {
@@ -112,7 +114,7 @@ fn main() {
                     }
                 }
             },
-            2 => {
+            2|3|4|5|6 => {
                 match evgen {
                     Ok(result) => {
                         //let tmp = instance.get_material_scarcity(&result.material_id);
@@ -163,7 +165,7 @@ fn main() {
                     }
                 }
             },
-            3 => {
+            7|8|9 => {
                 match evgen {
                     Ok(result) => {
                         println!("[{}] Updating supply of material \"{}\" to {}; \

@@ -1,5 +1,5 @@
 /*
-* Copyright 2017 Michal Mauser
+* Copyright 2017-2018 Michal Mauser
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License as published by
@@ -54,7 +54,7 @@ pub struct ProductVariant {
 #[repr(C)]
 pub struct Material {
     //name: String,
-    pub scarcity: usize,
+    pub scarcity_cache: usize,
     pub demand: usize,
     pub supply: usize,
     //deposit_size: usize,
@@ -85,7 +85,7 @@ impl Instance {
         if !self.materials.contains_key(&name) {
             self.materials.insert(name.clone(),Material{
                 //name,
-                scarcity: 0,
+                scarcity_cache: 0,
                 demand: 0,
                 supply,
                 //deposit_size,
@@ -130,18 +130,19 @@ impl Instance {
         };
         prod.demand += amount;
         material.demand += amount * prod.variants.material_and_amount.1;
-        material.scarcity = material.calculate_scarcity();
+        material.scarcity_cache = material.calculate_scarcity();
 
+        let mut code = &1;
         if amount <= prod.supply {
             prod.deliver(&amount);
-            return &0 //ok
+            //code = &0; //ok
+            panic!("cannot happen right now");
         } else {
-            let mut code = &1;
             if material.supply < (amount * prod.variants.material_and_amount.1) //only a dev safeguard
                 { //mat.demand -= amount * prod.types.material_amount.1;
                     code = &4; //Material not available.
                 }
-            if material.scarcity > 50
+            if material.scarcity_cache > 50
                 { //mat.demand -= amount * prod.types.material_amount.1;
                     code = &5; //Material scarce.
                 }
@@ -156,20 +157,19 @@ impl Instance {
                     let mut q_product = products.get_mut(&q[i].0).unwrap();
                     let mut q_material = self.materials.get_mut(&q_product.variants.material_and_amount.0).unwrap();
                     if q_material.supply >= q[i].1 * q_product.variants.material_and_amount.1 &&
-                        q_material.scarcity <= 50 {
+                        q_material.scarcity_cache <= 50 {
                         q_product.manufacture(q_material, &q[i].1);
                         q_product.deliver(&q[i].1);
                         //i.1 = 0;
                         //to_remove.push(cnt);
                         let tmp = q.remove(i);
-                        if self.verbose { println!(" • Manufacturing {}x product \"{}\" from priority {} production queue.", tmp.1, tmp.0, q_product.priority+1);}
+                        if self.verbose { println!(" * Manufacturing {}x product \"{}\" from priority {} production queue.", tmp.1, tmp.0, q_product.priority+1);}
                     }
                     else { i += 1; }
                 }
             }
-
-            return code;
         }
+        return code;
     }
 
     //pub fn is_in_supply() {}
@@ -204,7 +204,7 @@ impl Instance {
 
     #[no_mangle]
     pub extern fn get_material_scarcity (&mut self, name: &str) -> usize {
-        self.materials.get_mut(name).unwrap().scarcity
+        self.materials.get_mut(name).unwrap().scarcity_cache
     }
 
     #[no_mangle]

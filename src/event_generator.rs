@@ -1,5 +1,5 @@
 /*
-* Copyright 2017 Michal Mauser
+* Copyright 2017-2018 Michal Mauser
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License as published by
@@ -64,7 +64,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 num => { Err(num) } //"Could not add product"
             }
         }
-        &2 => { // order product
+        &2|&3|&4|&5|&6 => { // order product
             let amount = rng.gen::<usize>() % max_values /48;
             let product_count = instance.get_product_count();
             let rnd_index = if product_count > 0 {
@@ -108,7 +108,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             }
 
         }
-        &3 => { // update supply
+        &7|&8|&9 => { // update supply
             let amount = rng.gen::<usize>() % max_values;
             let material_count = instance.get_material_count();
             let rnd_index = if material_count > 0 {
@@ -129,5 +129,34 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             } else { Err(&2) } //"Supply update failed"
         }
         _ => Err(&255) //"No such function"
+    }
+}
+
+pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: &usize, cycles: &usize) {
+    instance.add_material(String::from("first"), 10);
+    let tmp = rng.gen::<usize>() % cycles;
+    //println!("{}, {}", tmp, cycles);
+    let max: usize = if *cycles > 10 { tmp } else { 10 };
+    let mut cnt: usize = 0;
+    while cnt < max {
+        if rng.gen::<u8>() % 2 == 0 {
+            let name = rng.gen::<u16>().to_string();
+            let supply = rng.gen::<usize>() % max_values;
+            instance.add_material(name, supply);
+        } else {
+            let name = rng.gen::<u16>().to_string();
+            let material_amount = rng.gen::<usize>() % max_values /32;
+            let rnd_index = rng.gen::<usize>() % instance.get_material_count();
+            let priority = rng.gen::<usize>() % 4;
+            let material_id = instance.tst_get_materials().iter().enumerate()
+                .nth(rnd_index)
+                .unwrap()
+                .1
+                .0.clone();
+            let work_complexity = rng.gen::<u8>();
+            instance.add_product(name, material_id.clone(),
+                                       work_complexity, material_amount, priority);
+        }
+        cnt += 1;
     }
 }

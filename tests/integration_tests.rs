@@ -39,5 +39,5 @@ fn order_two_same_mat() {
     assert_eq!(instance.order_product("table", 1), &1);
     assert_eq!(instance.tst_get_material("wood").demand, 0);
     assert_eq!(instance.tst_get_material("wood").supply, 0);
-    assert_eq!(instance.tst_get_material("wood").scarcity, 50);
+    assert_eq!(instance.tst_get_material("wood").scarcity_cache, 50);
 }
