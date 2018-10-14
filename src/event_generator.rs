@@ -21,29 +21,29 @@ use resource_mng::Instance;
 
 pub struct RunResult {
     pub code: &'static u8,
-    pub name: String,
+    pub name: u64,
     pub amount: usize,
-    pub material_id: String,
+    pub material_id: u64,
 }
 
 pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values: &usize) -> Result<RunResult, &'static u8> {
     match fn_num {
         &0 => { //add material
-            let name = rng.gen::<u16>().to_string();
+            let name = rng.gen::<u16>() as u64;
             let supply = rng.gen::<usize>() % max_values;
-            match instance.add_material(name.clone(), supply) {
+            match instance.add_material(name, supply) {
                 &0 => {
                     Ok(RunResult {
                         code: &0,
                         name,
                         amount: supply,
-                        material_id: String::from("none")
+                        material_id: 999999998 //should not be displayed
                     })},
                 num => { Err(num) },
             }
         }
         &1 => { // add product
-            let name = rng.gen::<u16>().to_string();
+            let name = rng.gen::<u16>() as u64;
             let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % instance.get_material_count();
             let priority = rng.gen::<usize>() % 4;
@@ -53,7 +53,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 .1
                 .0.clone();
             let work_complexity = rng.gen::<u8>();
-            match instance.add_product(name.clone(), material_id.clone(),
+            match instance.add_product(name, material_id.clone(),
                                        work_complexity, material_amount, priority) {
                 &0 => Ok(RunResult {
                     code: &0,
@@ -79,7 +79,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             {let tmp = &instance.get_product_types(&name).material_and_amount;
             tmp1 = tmp.0.clone();
             tmp2 = tmp.1;} //fix me
-            match instance.order_product(&name, amount) {
+            match instance.order_product(name, amount) {
                 &1 => { //&0 not active atm
                     //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();
                     Ok(RunResult {
@@ -124,7 +124,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                     code: &0,
                     name,
                     amount,
-                    material_id: String::new(),
+                    material_id: 999999999, //should not be displayed
                 })
             } else { Err(&2) } //"Supply update failed"
         }
@@ -133,18 +133,18 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
 }
 
 pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: &usize, cycles: &usize) {
-    instance.add_material(String::from("first"), 10);
+    instance.add_material(1, 10);
     let tmp = rng.gen::<usize>() % cycles;
     //println!("{}, {}", tmp, cycles);
     let max: usize = if *cycles > 10 { tmp } else { 10 };
     let mut cnt: usize = 0;
     while cnt < max {
         if rng.gen::<u8>() % 2 == 0 {
-            let name = rng.gen::<u16>().to_string();
+            let name = rng.gen::<u16>() as u64;
             let supply = rng.gen::<usize>() % max_values;
             instance.add_material(name, supply);
         } else {
-            let name = rng.gen::<u16>().to_string();
+            let name = rng.gen::<u16>() as u64;
             let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % instance.get_material_count();
             let priority = rng.gen::<usize>() % 4;

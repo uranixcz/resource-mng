@@ -15,6 +15,9 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#[macro_use]
+extern crate lazy_static;
+
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -46,7 +49,7 @@ impl Product {
 #[derive(Debug)]
 #[repr(C)]
 pub struct ProductVariant {
-    pub material_and_amount: (String, usize), //change to materials in the future
+    pub material_and_amount: (u64, usize), //change to materials in the future
     work_complexity: u8,
 }
 
@@ -68,18 +71,27 @@ impl Material {
     }
 }
 
+lazy_static! {
+    static ref INSTANCE: Instance = Instance {
+        materials: HashMap::new(),
+        products: HashMap::new(),
+        production_queue: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+        verbose: false,
+    };
+}
+
 #[repr(C)]
 pub struct Instance {
-    materials: HashMap<String,Material>,
-    products: HashMap<String,Product>,
-    production_queue: [Vec<(String, usize)>; 4],
+    materials: HashMap<u64,Material>,
+    products: HashMap<u64,Product>,
+    production_queue: [Vec<(u64, usize)>; 4],
     pub verbose: bool,
 }
 
 impl Instance {
     #[no_mangle]
-    pub extern fn add_material(&mut self, name: String, supply: usize) -> &'static u8 {
-        if name.trim().is_empty() { return &1; }
+    pub extern fn add_material(&mut self, name: u64, supply: usize) -> &'static u8 {
+        //if name.trim().is_empty() { return &1; }
         if supply == 0 { return &2; }
 
         if !self.materials.contains_key(&name) {
@@ -96,11 +108,11 @@ impl Instance {
     }
 
     #[no_mangle]
-    pub extern fn add_product(&mut self, name: String, material_id: String,
+    pub extern fn add_product(&mut self, name: u64, material_id: u64,
                               work_complexity: u8, material_amount: usize,
                               priority: usize) -> &'static u8 {
-        if name.trim().is_empty() { return &1 }
-        if material_id.trim().is_empty() { return &2 }
+        //if name.trim().is_empty() { return &1 }
+        //if material_id.trim().is_empty() { return &2 }
         if material_amount == 0 { return &3 }
         if !self.materials.contains_key(&material_id) { return &4 }
         if self.products.contains_key(&name) { return &5 }
@@ -118,11 +130,11 @@ impl Instance {
     }
 
     #[no_mangle]
-    pub extern fn order_product(&mut self, name: &str, amount: usize) -> &'static u8 {
+    pub extern fn order_product(&mut self, name: u64, amount: usize) -> &'static u8 {
         if amount == 0 { return &2}
         let products = &mut self.products;
         if products.len() == 0 { panic!("no products in database");}
-        let mut prod = products.remove(name).unwrap();
+        let mut prod = products.remove(&name).unwrap();
         let production_queue = &mut self.production_queue;
         let mut material = match self.materials.remove(&prod.variants.material_and_amount.0) {
             Some(m) => m,
@@ -147,9 +159,9 @@ impl Instance {
                     code = &5; //Material scarce.
                 }
 
-            production_queue[prod.priority].push((String::from(name), amount));
+            production_queue[prod.priority].push((name, amount));
             self.materials.insert(prod.variants.material_and_amount.0.clone(), material);
-            products.insert(String::from(name), prod);
+            products.insert(name, prod);
             for q in production_queue.iter_mut() {
                 let mut i:usize = 0;
                 //let mut to_remove = Vec::new();
@@ -175,7 +187,7 @@ impl Instance {
     //pub fn is_in_supply() {}
 
     #[no_mangle]
-    pub extern fn update_supply(&mut self, name: &str, amount: usize) -> bool {
+    pub extern fn update_supply(&mut self, name: &u64, amount: usize) -> bool {
         match self.materials.get_mut(name) {
             Some(x) => {
                 x.supply = amount;
@@ -193,17 +205,17 @@ impl Instance {
     }
 
     #[no_mangle]
-    pub extern fn get_material_demand (&self, name: &str) -> usize {
+    pub extern fn get_material_demand (&self, name: &u64) -> usize {
         self.materials.get(name).unwrap().demand
     }
 
     #[no_mangle]
-    pub extern fn get_material_supply (&self, name: &str) -> usize {
+    pub extern fn get_material_supply (&self, name: &u64) -> usize {
         self.materials.get(name).unwrap().supply
     }
 
     #[no_mangle]
-    pub extern fn get_material_scarcity (&mut self, name: &str) -> usize {
+    pub extern fn get_material_scarcity (&mut self, name: &u64) -> usize {
         self.materials.get_mut(name).unwrap().scarcity_cache
     }
 
@@ -213,27 +225,27 @@ impl Instance {
     }
 
     #[no_mangle]
-    pub extern fn get_product_types (&self, name: &str) -> &ProductVariant {
+    pub extern fn get_product_types (&self, name: &u64) -> &ProductVariant {
         &self.products.get(name).unwrap().variants
     }
 
     #[no_mangle]
-    pub extern fn tst_set_product_supply(&mut self, name: &str, count: usize) {
+    pub extern fn tst_set_product_supply(&mut self, name: &u64, count: usize) {
         self.products.get_mut(name).unwrap().supply = count;
     }
 
     #[no_mangle]
-    pub extern fn tst_get_material(&self, name: &str) -> &Material {
+    pub extern fn tst_get_material(&self, name: &u64) -> &Material {
         self.materials.get(name).unwrap()
     }
 
     #[no_mangle]
-    pub extern fn tst_get_materials(&self) -> &HashMap<String, Material> {
+    pub extern fn tst_get_materials(&self) -> &HashMap<u64, Material> {
         &self.materials
     }
 
     #[no_mangle]
-    pub extern fn tst_get_products(&self) -> &HashMap<String, Product> {
+    pub extern fn tst_get_products(&self) -> &HashMap<u64, Product> {
         &self.products
     }
 
@@ -250,9 +262,9 @@ pub extern fn init() -> Instance {
 }
 
 #[no_mangle]
-pub extern fn load(materials: HashMap<String, Material>,
-                   products: HashMap<String, Product>,
-                   production_queue: [Vec<(String, usize)>; 4],
+pub extern fn load(materials: HashMap<u64, Material>,
+                   products: HashMap<u64, Product>,
+                   production_queue: [Vec<(u64, usize)>; 4],
                    verbose: bool) -> Instance {
     Instance {
         materials,
@@ -269,30 +281,30 @@ mod tests {
     #[test]
     fn add_same_material() {
         let mut instance = init();
-        instance.add_material(String::from("bla"), 8);
-        instance.add_material(String::from("bla"), 1);
-        assert_eq!(instance.materials.get("bla").unwrap().supply, 8);
+        instance.add_material(1234, 8);
+        instance.add_material(1234, 1);
+        assert_eq!(instance.materials.get(&1234).unwrap().supply, 8);
     }
 
     #[test]
     fn add_product_without_material() {
         let mut instance = init();
-        assert_ne!(!instance.add_product(String::from("bla"), String::from("mat"), 5, 10, 0),0);
+        assert_ne!(!instance.add_product(1234, 12345, 5, 10, 0),0);
     }
 
     #[test]
     fn add_same_product() {
         let mut instance = init();
-        instance.add_material(String::from("bla"), 8);
-        instance.add_product(String::from("blah"), String::from("bla"), 5, 10, 0);
-        instance.add_product(String::from("blah"), String::from("bla"), 0, 5, 0);
-        assert_eq!(instance.products.get("blah").unwrap().variants.material_and_amount.1, 10);
+        instance.add_material(1234, 8);
+        instance.add_product(12345, 1234, 5, 10, 0);
+        instance.add_product(12345, 1234, 0, 5, 0);
+        assert_eq!(instance.products.get(&12345).unwrap().variants.material_and_amount.1, 10);
     }
 
     #[test]
     fn add_prod_zero_mat() {
         let mut instance = init();
-        instance.add_material(String::from("bla"), 8);
-        assert_ne!(instance.add_product(String::from("bla"), String::from("bla"), 5, 0, 0), &0);
+        instance.add_material(1234, 8);
+        assert_ne!(instance.add_product(1234, 1234, 5, 0, 0), &0);
     }
 }

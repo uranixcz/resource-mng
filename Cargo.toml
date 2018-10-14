@@ -5,6 +5,7 @@ authors = ["Michal Mauser <michal.mauser@zeitgeistmovement.cz>"]
 
 [dependencies]
 rand = "0.4"
+lazy_static = "1.1.0"
 
 [[bin]]
 name = "resmng-en"
