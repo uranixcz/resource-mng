@@ -23,6 +23,7 @@ mod event_generator;
 use std::{thread, time};
 use std::env;
 use rand::Rng;
+use resource_mng::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -36,8 +37,9 @@ fn main() {
         millis = 0;
     }
     let mut rng = rand::thread_rng();
-    let mut instance = resource_mng::init();
+    let mut instance = init();
     instance.verbose = true;
+    let mut instance = &mut instance;
     let mut num: usize = 0;
     let mut f0_count: usize = 0;
     let mut f1_count: usize = 0;
@@ -51,7 +53,7 @@ fn main() {
     let mut evgen;
 
     println!("Generating initial database entries, please wait...");
-    event_generator::init(&mut instance, &mut rng, &max_values, &cycles);
+    event_generator::init(instance, &mut rng, &max_values, &cycles);
 
     while num < cycles || cycles == 0 {
         fn_num = rng.gen::<u8>() % 10;
@@ -122,18 +124,18 @@ fn main() {
                             &4 => {
                                 println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
                         Material \"{}\" not available; scarcity: {}", num, result.amount, result.name, result.material_id,
-                                         instance.get_material_scarcity(&result.material_id));
+                                         get_material_scarcity(instance, &result.material_id));
                                 failed_no_supply +=1;
                             },
                             &5 => { println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
                         Material \"{}\" scarce: {} > 50.", num, result.amount, result.name, result.material_id,
-                                           instance.get_material_scarcity(&result.material_id));
+                                           get_material_scarcity(instance, &result.material_id));
                                 failed_scarce +=1;
                             },
                             &_ => println!("[{}] Manufacturing product \"{}\" complete \
                         at the cost of {}x material \"{}\"; scarcity: {}",
                                            num, result.name, result.amount, result.material_id,
-                                           instance.get_material_scarcity(&result.material_id)),
+                                           get_material_scarcity(instance, &result.material_id)),
                         }
                         f2_count +=1;
                     },
@@ -170,8 +172,8 @@ fn main() {
                     Ok(result) => {
                         println!("[{}] Updating supply of material \"{}\" to {}; \
                         demand: {}, scarcity: {}", num, result.name, result.amount,
-                                 instance.get_material_demand(&result.name),
-                                 instance.tst_get_material(&result.name).calculate_scarcity()
+                                 get_material_demand(instance, &result.name),
+                                 tst_get_material(instance, &result.name).calculate_scarcity()
                                  );
                         f3_count +=1;
                     },
