@@ -18,7 +18,6 @@
 use std::collections::HashMap;
 
 #[derive(Debug)]
-#[repr(C)]
 pub struct Product {
     //name: String,
     variants: ProductVariant, //change to Vec in the future
@@ -44,15 +43,13 @@ impl Product {
 }
 
 #[derive(Debug)]
-#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ProductVariant {
-    pub material_and_amount: (u64, usize), //change to materials in the future
-    work_complexity: u8,
+    pub material_and_amount: (usize, usize), //change to materials in the future
+    //work_complexity: u8,
 }
 
 #[derive(Debug)]
-#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Material {
     //name: String,
@@ -70,11 +67,10 @@ impl Material {
     }
 }
 
-#[repr(C)]
 pub struct Instance {
-    materials: HashMap<u64,Material>,
-    products: HashMap<u64,Product>,
-    production_queue: [Vec<(u64, usize)>; 4],
+    materials: HashMap<usize,Material>,
+    products: HashMap<usize,Product>,
+    production_queue: [Vec<(usize, usize)>; 4],
     pub verbose: bool,
 }
 
@@ -89,61 +85,60 @@ pub extern fn init() -> Box<Instance> {
 }
 
 #[no_mangle]
-pub extern fn add_material(instance: &mut Instance, name: u64, supply: usize) -> &'static u8 {
+pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: usize) -> u8 {
     //if name.trim().is_empty() { return &1; }
-    if supply == 0 { return &2; }
+    if supply == 0 { return 2; }
 
-    if !instance.materials.contains_key(&name) {
-        instance.materials.insert(name.clone(),Material{
+    if !instance.materials.contains_key(&new_id) {
+        instance.materials.insert(new_id.clone(),Material{
             //name,
             scarcity_cache: 0,
             demand: 0,
             supply,
             //deposit_size,
         });
-        &0 //ok
-    } else { &3 }
+        0 //ok
+    } else { 3 }
 
 }
 
 #[no_mangle]
-pub extern fn add_product(instance: &mut Instance, name: u64, material_id: u64,
-                          work_complexity: u8, material_amount: usize,
-                          priority: usize) -> &'static u8 {
+pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: usize,
+                          material_amount: usize, priority: usize) -> u8 {
     //if name.trim().is_empty() { return &1 }
     //if material_id.trim().is_empty() { return &2 }
-    if material_amount == 0 { return &3 }
-    if !instance.materials.contains_key(&material_id) { return &4 }
-    if instance.products.contains_key(&name) { return &5 }
-    instance.products.insert(name.clone(), Product{
+    if material_amount == 0 { return 3 }
+    if !instance.materials.contains_key(&material_id) { return 4 }
+    if instance.products.contains_key(&new_id) { return 5 }
+    instance.products.insert(new_id.clone(), Product{
         //name,
         variants: ProductVariant {
             material_and_amount: (material_id, material_amount),
-            work_complexity,
+            //work_complexity,
         },
         supply: 0,
         demand: 0,
         priority,
     });
-    &0
+    0
 }
 
 #[no_mangle]
-pub extern fn order_product(instance: &mut Instance, name: u64, amount: usize) -> &'static u8 {
-    if amount == 0 { return &2}
+pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize) -> u8 {
+    if amount == 0 { return 2}
     let products = &mut instance.products;
     if products.len() == 0 { panic!("no products in database");}
-    let mut prod = products.remove(&name).unwrap();
+    let mut prod = products.remove(&id).unwrap();
     let production_queue = &mut instance.production_queue;
     let mut material = match instance.materials.remove(&prod.variants.material_and_amount.0) {
         Some(m) => m,
-        None => return &3, //No such material in database.
+        None => return 3, //No such material in database.
     };
     prod.demand += amount;
     material.demand += amount * prod.variants.material_and_amount.1;
     material.scarcity_cache = material.calculate_scarcity();
 
-    let mut code = &1;
+    let mut code = 1;
     if amount <= prod.supply {
         prod.deliver(&amount);
         //code = &0; //ok
@@ -151,16 +146,16 @@ pub extern fn order_product(instance: &mut Instance, name: u64, amount: usize) -
     } else {
         if material.supply < (amount * prod.variants.material_and_amount.1) //only a dev safeguard
             { //mat.demand -= amount * prod.types.material_amount.1;
-                code = &4; //Material not available.
+                code = 4; //Material not available.
             }
         if material.scarcity_cache > 50
             { //mat.demand -= amount * prod.types.material_amount.1;
-                code = &5; //Material scarce.
+                code = 5; //Material scarce.
             }
 
-        production_queue[prod.priority].push((name, amount));
+        production_queue[prod.priority].push((id, amount));
         instance.materials.insert(prod.variants.material_and_amount.0.clone(), material);
-        products.insert(name, prod);
+        products.insert(id, prod);
         for q in production_queue.iter_mut() {
             let mut i:usize = 0;
             //let mut to_remove = Vec::new();
@@ -174,7 +169,10 @@ pub extern fn order_product(instance: &mut Instance, name: u64, amount: usize) -
                     //i.1 = 0;
                     //to_remove.push(cnt);
                     let tmp = q.remove(i);
-                    if instance.verbose { println!(" * Manufacturing {}x product \"{}\" from priority {} production queue.", tmp.1, tmp.0, q_product.priority+1);}
+                    if instance.verbose {
+                        println!(" * Manufacturing {}x product \"{}\" from priority {} production queue.",
+                                 tmp.1, tmp.0, q_product.priority+1);
+                    }
                 }
                     else { i += 1; }
             }
@@ -186,8 +184,8 @@ pub extern fn order_product(instance: &mut Instance, name: u64, amount: usize) -
 //pub fn is_in_supply() {}
 
 #[no_mangle]
-pub extern fn update_supply(instance: &mut Instance, name: &u64, amount: usize) -> bool {
-    match instance.materials.get_mut(name) {
+pub extern fn update_supply(instance: &mut Instance, id: usize, amount: usize) -> bool {
+    match instance.materials.get_mut(&id) {
         Some(x) => {
             x.supply = amount;
             true
@@ -204,18 +202,18 @@ pub extern fn get_material_count (instance: &Instance) -> usize {
 }
 
 #[no_mangle]
-pub extern fn get_material_demand (instance: &Instance, name: &u64) -> usize {
-    instance.materials.get(name).unwrap().demand
+pub extern fn get_material_demand (instance: &Instance, id: &usize) -> usize {
+    instance.materials.get(id).unwrap().demand
 }
 
 #[no_mangle]
-pub extern fn get_material_supply (instance: &Instance, name: &u64) -> usize {
-    instance.materials.get(name).unwrap().supply
+pub extern fn get_material_supply (instance: &Instance, id: &usize) -> usize {
+    instance.materials.get(id).unwrap().supply
 }
 
 #[no_mangle]
-pub extern fn get_material_scarcity (instance: &mut Instance, name: &u64) -> usize {
-    instance.materials.get_mut(name).unwrap().scarcity_cache
+pub extern fn get_material_scarcity (instance: &mut Instance, id: &usize) -> usize {
+    instance.materials.get_mut(id).unwrap().scarcity_cache
 }
 
 #[no_mangle]
@@ -223,28 +221,23 @@ pub extern fn get_product_count (instance: &Instance) -> usize {
     instance.products.len()
 }
 
-#[no_mangle]
-pub extern fn get_product_types (instance: &Instance, name: &u64) -> ProductVariant {
-    instance.products.get(name).unwrap().variants.clone()
+pub fn get_product_types (instance: &Instance, id: &usize) -> ProductVariant {
+    instance.products.get(id).unwrap().variants.clone()
 }
 
-#[no_mangle]
-pub extern fn tst_set_product_supply(instance: &mut Instance, name: &u64, count: usize) {
-    instance.products.get_mut(name).unwrap().supply = count;
+pub fn tst_set_product_supply(instance: &mut Instance, id: &usize, count: usize) {
+    instance.products.get_mut(id).unwrap().supply = count;
 }
 
-#[no_mangle]
-pub extern fn tst_get_material(instance: &Instance, name: &u64) -> Material {
-    instance.materials.get(name).unwrap().clone()
+pub fn tst_get_material(instance: &Instance, id: &usize) -> Material {
+    instance.materials.get(id).unwrap().clone()
 }
 
-#[no_mangle]
-pub extern fn tst_get_materials(instance: &Instance) -> &HashMap<u64, Material> {
+pub fn tst_get_materials(instance: &Instance) -> &HashMap<usize, Material> {
     &instance.materials
 }
 
-#[no_mangle]
-pub extern fn tst_get_products(instance: &Instance) -> &HashMap<u64, Product> {
+pub fn tst_get_products(instance: &Instance) -> &HashMap<usize, Product> {
     &instance.products
 }
 
@@ -265,15 +258,15 @@ mod tests {
     #[test]
     fn add_product_without_material() {
         let instance = &mut init();
-        assert_ne!(!add_product(instance, 1234, 12345, 5, 10, 0),0);
+        assert_ne!(!add_product(instance, 1234, 12345, 10, 0),0);
     }
 
     #[test]
     fn add_same_product() {
         let instance = &mut init();
         add_material(instance, 1234, 8);
-        add_product(instance, 12345, 1234, 5, 10, 0);
-        add_product(instance, 12345, 1234, 0, 5, 0);
+        add_product(instance, 12345, 1234, 10, 0);
+        add_product(instance, 12345, 1234, 5, 0);
         assert_eq!(instance.products.get(&12345).unwrap().variants.material_and_amount.1, 10);
     }
 
@@ -281,6 +274,6 @@ mod tests {
     fn add_prod_zero_mat() {
         let instance = &mut init();
         add_material(instance, 1234, 8);
-        assert_ne!(add_product(instance, 1234, 1234, 5, 0, 0), &0);
+        assert_ne!(add_product(instance, 1234, 1234, 0, 0), 0);
     }
 }

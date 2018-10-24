@@ -21,18 +21,18 @@ use resource_mng::*;
 
 pub struct RunResult {
     pub code: &'static u8,
-    pub name: u64,
+    pub name: usize,
     pub amount: usize,
-    pub material_id: u64,
+    pub material_id: usize,
 }
 
-pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values: &usize) -> Result<RunResult, &'static u8> {
+pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values: &usize) -> Result<RunResult, u8> {
     match fn_num {
         &0 => { //add material
-            let name = rng.gen::<u16>() as u64;
+            let name = rng.gen::<u16>() as usize;
             let supply = rng.gen::<usize>() % max_values;
             match add_material(instance, name, supply) {
-                &0 => {
+                0 => {
                     Ok(RunResult {
                         code: &0,
                         name,
@@ -43,7 +43,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             }
         }
         &1 => { // add product
-            let name = rng.gen::<u16>() as u64;
+            let name = rng.gen::<u16>() as usize;
             let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
@@ -52,10 +52,10 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 .unwrap()
                 .1
                 .0.clone();
-            let work_complexity = rng.gen::<u8>();
+            //let work_complexity = rng.gen::<u8>();
             match add_product(instance, name, material_id.clone(),
-                                       work_complexity, material_amount, priority) {
-                &0 => Ok(RunResult {
+                                       material_amount, priority) {
+                0 => Ok(RunResult {
                     code: &0,
                     name,
                     amount: material_amount,
@@ -69,36 +69,36 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             let product_count = get_product_count(instance);
             let rnd_index = if product_count > 0 {
                 rng.gen::<usize>() % product_count
-            } else { return Err(&6) }; //"Product database is empty."
-            let name = tst_get_products(instance).iter().enumerate()
+            } else { return Err(6) }; //"Product database is empty."
+            let id = tst_get_products(instance).iter().enumerate()
                 .nth(rnd_index)
                 .unwrap()
                 .1
                 .0.clone();
             let tmp1; let tmp2;
-            {let tmp = &get_product_types(instance, &name).material_and_amount;
+            {let tmp = &get_product_types(instance, &id).material_and_amount;
             tmp1 = tmp.0.clone();
             tmp2 = tmp.1;} //fix me
-            match order_product(instance, name, amount) {
-                &1 => { //&0 not active atm
+            match order_product(instance, id, amount) {
+                1 => { //&0 not active atm
                     //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();
                     Ok(RunResult {
                         code: &1,
-                        name: name.clone(),
+                        name: id.clone(),
                         amount: amount * tmp2,
                         material_id: tmp1,
                     })},
-                &4 => {
+                4 => {
                     Ok(RunResult {
                         code: &4,
-                        name: name.clone(),
+                        name: id.clone(),
                         amount,
                         material_id: tmp1,
                     })},
-                &5 => {
+                5 => {
                     Ok(RunResult {
                         code: &5,
-                        name: name.clone(),
+                        name: id.clone(),
                         amount,
                         material_id: tmp1,
                     })},
@@ -113,22 +113,22 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             let material_count = get_material_count(instance);
             let rnd_index = if material_count > 0 {
                 rng.gen::<usize>() % material_count
-            } else { return Err(&1) }; //"No materials in database."
+            } else { return Err(1) }; //"No materials in database."
             let name = tst_get_materials(instance).iter().enumerate()
                 .nth(rnd_index)
                 .unwrap()
                 .1
                 .0.clone();
-            if update_supply(instance, &name, amount) {
+            if update_supply(instance, name, amount) {
                 Ok(RunResult {
                     code: &0,
                     name,
                     amount,
                     material_id: 999999999, //should not be displayed
                 })
-            } else { Err(&2) } //"Supply update failed"
+            } else { Err(2) } //"Supply update failed"
         }
-        _ => Err(&255) //"No such function"
+        _ => Err(255) //"No such function"
     }
 }
 
@@ -140,11 +140,11 @@ pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: &usize, cy
     let mut cnt: usize = 0;
     while cnt < max {
         if rng.gen::<u8>() % 2 == 0 {
-            let name = rng.gen::<u16>() as u64;
+            let name = rng.gen::<u16>() as usize;
             let supply = rng.gen::<usize>() % max_values;
             add_material(instance, name, supply);
         } else {
-            let name = rng.gen::<u16>() as u64;
+            let name = rng.gen::<u16>() as usize;
             let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
@@ -153,9 +153,9 @@ pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: &usize, cy
                 .unwrap()
                 .1
                 .0.clone();
-            let work_complexity = rng.gen::<u8>();
+            //let work_complexity = rng.gen::<u8>();
             add_product(instance, name, material_id.clone(),
-                                       work_complexity, material_amount, priority);
+                                       material_amount, priority);
         }
         cnt += 1;
     }

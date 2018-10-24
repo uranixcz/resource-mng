@@ -66,15 +66,15 @@ fn main() {
                                  num, result.name, result.amount);
                         f0_count += 1;
                     },
-                    Err(&1) => {
+                    Err(1) => {
                         println!("[{}] Přidání materiálu selhalo. \
                         Název nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
                     },
-                    Err(&2) => {
+                    Err(2) => {
                         //println!("[{}] Přidání materiálu selhalo. \
                         //Množství nesmí být 0.", num);
                     },
-                    Err(&3) => {
+                    Err(3) => {
                         //println!("[{}] Přidání materiálu selhalo. \
                         //Materiál je již v databázi.", num);
                     },
@@ -91,23 +91,23 @@ fn main() {
                         do databáze", num, result.name, result.amount, result.material_id);
                         f1_count +=1;
                     },
-                    Err(&1) => {
+                    Err(1) => {
                         //println!("[{}] Přidání produktu selhalo. \
                         //Název produktu nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
                     }
-                    Err(&2) => {
+                    Err(2) => {
                         //println!("[{}] Přidání produktu selhalo. \
                         //Název materiálu nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
                     }
-                    Err(&3) => {
+                    Err(3) => {
                         //println!("[{}] Přidání produktu selhalo. \
                         //Požadované množství materiálu nesmí být nula", num);
                     }
-                    Err(&4) => {
+                    Err(4) => {
                         println!("[{}] Přidání produktu selhalo. \
                         Materiál neexistuje.", num);
                     }
-                    Err(&5) => {
+                    Err(5) => {
                         //println!("[{}] Přidání produktu selhalo. \
                         //Produkt již existuje.", num);
                     }
@@ -139,25 +139,25 @@ fn main() {
                         }
                         f2_count +=1;
                     },
-                    Err(&2) => {
+                    Err(2) => {
                         //println!("[{}] Výroba produktu selhala. \
                         //Nelze objednat 0 kusů.", num);
                     },
-                    Err(&3) => {
+                    Err(3) => {
                         //println!("[{}] Výroba produktu selhala. \
                         //Materiál není v databázi", num);
                     },
-                    Err(&4) => {
+                    Err(4) => {
                         println!("[{}] Výroba produktu selhala. \
                         Materiál neí k dispozici", num); //safeguard for future code changes
                         panic!("Material not available.");
                     },
-                    Err(&5) => {
+                    Err(5) => {
                         println!("[{}] Výroba produktu selhala. \
                         Materiál je vzácný.", num); //safeguard for future code changes
                         panic!("Material scarce.");
                     },
-                    Err(&6) => {
+                    Err(6) => {
                         //println!("[{}] Výroba produktu selhala. \
                         //Databáze produktů je prázdná.", num);
                     },
@@ -177,11 +177,11 @@ fn main() {
                                  );
                         f3_count +=1;
                     },
-                    Err(&1) => {
+                    Err(1) => {
                         println!("[{}] Aktualizace nabídky materiálu selhala. \
                         Databáze materiálů je prázdná.", num);
                     },
-                    Err(&2) => {
+                    Err(2) => {
                         println!("[{}] Aktualizace nabídky materiálu selhala. \
                         Proces selhal.", num);
                     },
@@ -197,8 +197,8 @@ fn main() {
         num += 1;
         if millis != 0 { thread::sleep(time); }
     }
-    println!("\nProgram skončil v cyklu {}.\n\
+    eprintln!("\nProgram skončil v cyklu {}.\n\
     Vykonané funkce      | Přidej materiál: {}, Přidej produkt: {}, Objednej produkt: {}, Aktualizuj nabídku: {}",
              num, f0_count, f1_count, f2_count, f3_count);
-    println!("Neúspěšné objednávky | nedostatečná nabídka: {}, vzácnost: {}", failed_no_supply, failed_scarce);
+    eprintln!("Neúspěšné objednávky | nedostatečná nabídka: {}, vzácnost: {}", failed_no_supply, failed_scarce);
 }

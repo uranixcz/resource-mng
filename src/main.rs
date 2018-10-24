@@ -66,15 +66,15 @@ fn main() {
                                  num, result.name, result.amount);
                         f0_count += 1;
                     },
-                    Err(&1) => {
+                    Err(1) => {
                         println!("[{}] Adding material failed. \
                         Name cannot be empty or contain only white spaces.", num);
                     },
-                    Err(&2) => {
+                    Err(2) => {
                         //println!("[{}] Adding material failed. \
                         //Supply cannot be zero.", num);
                     },
-                    Err(&3) => {
+                    Err(3) => {
                         //println!("[{}] Adding material failed. \
                         //Material already in database.", num);
                     },
@@ -91,23 +91,23 @@ fn main() {
                         to the database", num, result.name, result.amount, result.material_id);
                         f1_count +=1;
                     },
-                    Err(&1) => {
+                    Err(1) => {
                         //println!("[{}] Adding product failed. \
                         //Product name cannot be empty or contain only white spaces.", num);
                     }
-                    Err(&2) => {
+                    Err(2) => {
                         //println!("[{}] Adding product failed. \
                         //Material name cannot be empty or contain only white spaces.", num);
                     }
-                    Err(&3) => {
+                    Err(3) => {
                         //println!("[{}] Adding product failed. \
                         //Material amount required must not be zero.", num);
                     }
-                    Err(&4) => {
+                    Err(4) => {
                         println!("[{}] Adding product failed. \
                         Material does not exist.", num);
                     }
-                    Err(&5) => {
+                    Err(5) => {
                         //println!("[{}] Adding product failed. \
                         //Product already exists.", num);
                     }
@@ -139,25 +139,25 @@ fn main() {
                         }
                         f2_count +=1;
                     },
-                    Err(&2) => {
+                    Err(2) => {
                         //println!("[{}] Manufacturing product failed. \
                         //Cannot order 0 products.", num);
                     },
-                    Err(&3) => {
+                    Err(3) => {
                         //println!("[{}] Manufacturing product failed. \
                         //No such material in database.", num);
                     },
-                    Err(&4) => {
+                    Err(4) => {
                         println!("[{}] Manufacturing product failed. \
                         Material not available.", num); //safeguard for future code changes
                         panic!("Material not available.");
                     },
-                    Err(&5) => {
+                    Err(5) => {
                         println!("[{}] Manufacturing product failed. \
                         Material scarce.", num); //safeguard for future code changes
                         panic!("Material scarce.");
                     },
-                    Err(&6) => {
+                    Err(6) => {
                         //println!("[{}] Manufacturing product failed. \
                         //Product database is empty.", num);
                     },
@@ -177,11 +177,11 @@ fn main() {
                                  );
                         f3_count +=1;
                     },
-                    Err(&1) => {
+                    Err(1) => {
                         println!("[{}] Updating supply of material failed. \
                         No materials in database.", num);
                     },
-                    Err(&2) => {
+                    Err(2) => {
                         println!("[{}] Updating supply of material failed. \
                         Supply update failed.", num);
                     },
@@ -197,8 +197,8 @@ fn main() {
         num += 1;
         if millis != 0 { thread::sleep(time); }
     }
-    println!("\nProgram ends at cycle {}.\n\
+    eprintln!("\nProgram ends at cycle {}.\n\
     Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
              num, f0_count, f1_count, f2_count, f3_count);
-    println!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
+    eprintln!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
 }
