@@ -62,7 +62,7 @@ fn main() {
             0 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Adding material \"{}\" to the database, supply: {}",
+                        println!("[{}] Adding material #{} to the database, supply: {}",
                                  num, result.name, result.amount);
                         f0_count += 1;
                     },
@@ -87,7 +87,7 @@ fn main() {
             1 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Adding product \"{}\" composed of {}x material \"{}\" \
+                        println!("[{}] Adding product #{} composed of {}x material #{} \
                         to the database", num, result.name, result.amount, result.material_id);
                         f1_count +=1;
                     },
@@ -122,18 +122,18 @@ fn main() {
                         //let tmp = instance.get_material_scarcity(&result.material_id);
                         match result.code {
                             &4 => {
-                                println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
-                        Material \"{}\" not available; scarcity: {}", num, result.amount, result.name, result.material_id,
+                                println!("[{}] Manufacturing of {}x product #{} DENIED. \
+                        Material #{} not available; scarcity: {}", num, result.amount, result.name, result.material_id,
                                          get_material_scarcity(instance, &result.material_id));
                                 failed_no_supply +=1;
                             },
-                            &5 => { println!("[{}] Manufacturing of {}x products \"{}\" DENIED. \
-                        Material \"{}\" scarce: {} > 50.", num, result.amount, result.name, result.material_id,
+                            &5 => { println!("[{}] Manufacturing of {}x product #{} DENIED. \
+                        Material #{} scarce: {} > 50.", num, result.amount, result.name, result.material_id,
                                            get_material_scarcity(instance, &result.material_id));
                                 failed_scarce +=1;
                             },
-                            &_ => println!("[{}] Manufacturing product \"{}\" complete \
-                        at the cost of {}x material \"{}\"; scarcity: {}",
+                            &_ => println!("[{}] Manufacturing product #{} complete \
+                        at the cost of {}x material #{}; scarcity: {}",
                                            num, result.name, result.amount, result.material_id,
                                            get_material_scarcity(instance, &result.material_id)),
                         }
@@ -170,7 +170,7 @@ fn main() {
             7|8|9 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Updating supply of material \"{}\" to {}; \
+                        println!("[{}] Updating supply of material #{} to {}; \
                         demand: {}, scarcity: {}", num, result.name, result.amount,
                                  get_material_demand(instance, &result.name),
                                  tst_get_material(instance, &result.name).calculate_scarcity()

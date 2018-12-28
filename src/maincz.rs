@@ -34,7 +34,7 @@ fn main() {
         millis = args[2].parse().unwrap();
     } else {
         cycles = 500;
-        millis = 0;
+        millis = 500;
     }
     let mut rng = rand::thread_rng();
     let mut instance = init();
@@ -62,7 +62,7 @@ fn main() {
             0 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Přidávám materiál \"{}\" do databáze; množství: {}",
+                        println!("[{}] Přidávám materiál #{} do databáze; množství: {}",
                                  num, result.name, result.amount);
                         f0_count += 1;
                     },
@@ -87,7 +87,7 @@ fn main() {
             1 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Přidávám produkt \"{}\" složen z {} kusů materiálu \"{}\" \
+                        println!("[{}] Přidávám produkt #{} složen z {} kusů materiálu #{} \
                         do databáze", num, result.name, result.amount, result.material_id);
                         f1_count +=1;
                     },
@@ -122,18 +122,18 @@ fn main() {
                         //let tmp = instance.get_material_scarcity(&result.material_id);
                         match result.code {
                             &4 => {
-                                println!("[{}] Výroba {} produktů \"{}\" ZAMÍTNUTA. \
-                        Materiál \"{}\" není k dispozici; nedostatkovost: {}", num, result.amount, result.name, result.material_id,
+                                println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
+                        Materiál #{} není k dispozici; nedostatkovost: {}", num, result.amount, result.name, result.material_id,
                                          get_material_scarcity(instance, &result.material_id));
                                 failed_no_supply +=1;
                             },
-                            &5 => { println!("[{}] Výroba {} produktů \"{}\" ZAMÍTNUTA. \
-                        Materiál \"{}\" nedostatkový: {} > 50.", num, result.amount, result.name, result.material_id,
+                            &5 => { println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
+                        Materiál #{} nedostatkový: {} > 50.", num, result.amount, result.name, result.material_id,
                                            get_material_scarcity(instance, &result.material_id));
                                 failed_scarce +=1;
                             },
-                            &_ => println!("[{}] Vyrábím produkt \"{}\" \
-                        za cenu {} kusů materiálu \"{}\", nedostatkovost: {}",
+                            &_ => println!("[{}] Vyrábím produkt #{} \
+                        za cenu {} kusů materiálu #{}, nedostatkovost: {}",
                                            num, result.name, result.amount, result.material_id,
                                            get_material_scarcity(instance, &result.material_id)),
                         }
@@ -170,7 +170,7 @@ fn main() {
             7|8|9 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Aktualizuji nabídku materiálu \"{}\" na {} k.; \
+                        println!("[{}] Aktualizuji nabídku materiálu #{} na {} ks; \
                         poptávka: {}, nedostatkovost: {}", num, result.name, result.amount,
                                  get_material_demand(instance, &result.name),
                                  tst_get_material(instance, &result.name).calculate_scarcity()

@@ -90,7 +90,7 @@ pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: usize
     if supply == 0 { return 2; }
 
     if !instance.materials.contains_key(&new_id) {
-        instance.materials.insert(new_id.clone(),Material{
+        instance.materials.insert(new_id,Material{
             //name,
             scarcity_cache: 0,
             demand: 0,
@@ -104,13 +104,14 @@ pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: usize
 
 #[no_mangle]
 pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: usize,
-                          material_amount: usize, priority: usize) -> u8 {
+                          material_amount: usize, priority: usize) -> u8
+{
     //if name.trim().is_empty() { return &1 }
     //if material_id.trim().is_empty() { return &2 }
     if material_amount == 0 { return 3 }
     if !instance.materials.contains_key(&material_id) { return 4 }
     if instance.products.contains_key(&new_id) { return 5 }
-    instance.products.insert(new_id.clone(), Product{
+    instance.products.insert(new_id, Product{
         //name,
         variants: ProductVariant {
             material_and_amount: (material_id, material_amount),
@@ -170,7 +171,7 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize) -
                     //to_remove.push(cnt);
                     let tmp = q.remove(i);
                     if instance.verbose {
-                        println!(" * Manufacturing {}x product \"{}\" from priority {} production queue.",
+                        println!(" * Manufacturing {}x product #{} from priority {} production queue.",
                                  tmp.1, tmp.0, q_product.priority+1);
                     }
                 }
@@ -221,11 +222,33 @@ pub extern fn get_product_count (instance: &Instance) -> usize {
     instance.products.len()
 }
 
-pub fn get_product_types (instance: &Instance, id: &usize) -> ProductVariant {
+#[no_mangle]
+pub extern fn get_product_supply (instance: &Instance, id: &usize) -> usize {
+    instance.products.get(id).unwrap().supply
+}
+
+#[no_mangle]
+pub extern fn get_product_demand (instance: &Instance, id: &usize) -> usize {
+    instance.products.get(id).unwrap().demand
+}
+
+#[no_mangle]
+pub extern fn get_product_priority (instance: &Instance, id: &usize) -> usize {
+    instance.products.get(id).unwrap().priority
+}
+
+#[no_mangle]
+pub extern fn get_product_variant (instance: &Instance, id: &usize) -> [usize; 2] {
+    let tmp = instance.products.get(id).unwrap().variants.material_and_amount;
+    [tmp.0, tmp.1]
+}
+
+pub fn get_product_variants(instance: &Instance, id: &usize) -> ProductVariant {
     instance.products.get(id).unwrap().variants.clone()
 }
 
-pub fn tst_set_product_supply(instance: &mut Instance, id: &usize, count: usize) {
+#[no_mangle]
+pub extern fn tst_set_product_supply(instance: &mut Instance, id: &usize, count: usize) {
     instance.products.get_mut(id).unwrap().supply = count;
 }
 
