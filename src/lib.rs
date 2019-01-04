@@ -144,43 +144,45 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize) -
         panic!("cannot happen right now");
     } else {
         if material.supply < (amount * prod.variants.first().unwrap().material_and_amount.1) //only a dev safeguard
-            { //mat.demand -= amount * prod.types.material_amount.1;
-                code = 4; //Material not available.
-            }
+        { //mat.demand -= amount * prod.types.material_amount.1;
+            code = 4; //Material not available.
+        }
         if material.scarcity_cache > 50
-            { //mat.demand -= amount * prod.types.material_amount.1;
-                code = 5; //Material scarce.
-            }
+        { //mat.demand -= amount * prod.types.material_amount.1;
+            code = 5; //Material scarce.
+        }
 
         production_queue[prod.priority].push((id, amount));
         instance.materials.insert(prod.variants.first().unwrap().material_and_amount.0.clone(), material);
         products.insert(id, prod);
-        for q in production_queue.iter_mut() {
-            let mut i:usize = 0;
-            //let mut to_remove = Vec::new();
-            while i != q.len() {
-                let mut q_product = products.get_mut(&q[i].0).unwrap();
+    }
+    return code;
+}
 
-                for variant in q_product.variants.clone() {
-                    let mut q_material = instance.materials.get_mut(&variant.material_and_amount.0).unwrap();
-                    if q_material.supply >= q[i].1 * variant.material_and_amount.1 &&
-                        q_material.scarcity_cache <= 50 {
-                        q_product.manufacture(q_material, &q[i].1);
-                        q_product.deliver(&q[i].1);
-                        //i.1 = 0;
-                        //to_remove.push(cnt);
-                        let tmp = q.remove(i);
-                        if instance.verbose {
-                            println!(" * Manufacturing {}x product #{} from priority {} production queue.",
-                                     tmp.1, tmp.0, q_product.priority+1);
-                        }
+#[no_mangle]
+pub extern fn process_queue(instance: &mut Instance) {
+    for q in instance.production_queue.iter_mut() {
+        let mut i:usize = 0;
+        //let mut to_remove = Vec::new();
+        while i != q.len() {
+            let mut q_product = instance.products.get_mut(&q[i].0).unwrap();
+
+            for variant in q_product.variants.clone() {
+                let mut q_material = instance.materials.get_mut(&variant.material_and_amount.0).unwrap();
+                if q_material.supply >= q[i].1 * variant.material_and_amount.1 &&
+                    q_material.scarcity_cache <= 50 {
+                    q_product.manufacture(q_material, &q[i].1);
+                    q_product.deliver(&q[i].1);
+                    let tmp = q.remove(i);
+                    if instance.verbose {
+                        println!(" * Manufacturing {}x product #{} from priority {} production queue.",
+                                 tmp.1, tmp.0, q_product.priority+1);
                     }
-                    else { i += 1; }
                 }
+                else { i += 1; }
             }
         }
     }
-    return code;
 }
 
 //pub fn is_in_supply() {}
