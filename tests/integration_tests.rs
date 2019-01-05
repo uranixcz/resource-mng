@@ -18,7 +18,7 @@ fn order_enough_mat() {
 
     add_material(instance, 123,80);
     add_product(instance, 1234, 123, 10, 0);
-    assert_eq!(order_product(instance, 1234, 8), 1);
+    assert_eq!(order_product(instance, 1234, 8, 0), 1);
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn order_nenough_mat() {
 
     add_material(instance, 123, 79);
     add_product(instance, 1234, 123, 10, 0);
-    assert_eq!(order_product(instance, 1234, 8), 4);
+    assert_eq!(order_product(instance, 1234, 8, 0), 4);
 }
 
 #[test]
@@ -37,8 +37,10 @@ fn order_two_same_mat() {
     add_material(instance, 123,80);
     add_product(instance, 1234, 123, 10, 0);
     add_product(instance, 1235, 123, 10, 0);
-    assert_eq!(order_product(instance, 1234, 7), 1);
-    assert_eq!(order_product(instance, 1235, 1), 1);
+    assert_eq!(order_product(instance, 1234, 7, 0), 1);
+    process_queue(instance);
+    assert_eq!(order_product(instance, 1235, 1, 0), 1);
+    process_queue(instance);
     assert_eq!(tst_get_material(instance, &123).demand, 0);
     assert_eq!(tst_get_material(instance, &123).supply, 0);
     assert_eq!(tst_get_material(instance, &123).scarcity_cache, 50);

@@ -79,7 +79,7 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
             {let tmp = get_product_variants(instance, &id).first().unwrap().material_and_amount;
             tmp1 = tmp.0.clone();
             tmp2 = tmp.1;} //fix me
-            match order_product(instance, id, amount) {
+            match order_product(instance, id, amount, 0) {
                 1 => { //&0 not active atm
                     //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();
                     process_queue(instance);

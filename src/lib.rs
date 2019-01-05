@@ -29,10 +29,10 @@ pub struct Product {
 }
 
 impl Product {
-    fn manufacture(&mut self, material: &mut Material, amount: &usize) {
+    fn manufacture(&mut self, material: &mut Material, amount: &usize, variant_id: usize) {
         //let material = materials.get_mut(&self.variants.material_amount.0).unwrap();
-        material.supply -= self.variants.first().unwrap().material_and_amount.1 * amount;
-        material.demand -= self.variants.first().unwrap().material_and_amount.1 * amount;
+        material.supply -= self.variants.get(variant_id).unwrap().material_and_amount.1 * amount;
+        material.demand -= self.variants.get(variant_id).unwrap().material_and_amount.1 * amount;
         self.supply += amount;
         //product.demand -= amount;
     }
@@ -144,8 +144,7 @@ pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: u
 }
 
 #[no_mangle]
-pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize) -> u8 {
-    let variant_id = 0;
+pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, variant_id: usize) -> u8 {
     if amount == 0 { return 2}
     let products = &mut instance.products;
     if products.len() == 0 { panic!("no products in database");}
@@ -200,12 +199,12 @@ pub extern fn process_queue(instance: &mut Instance) {
                 let mut q_material = instance.materials.get_mut(&variant.material_and_amount.0).unwrap();
                 if q_material.supply >= q[i].1 * variant.material_and_amount.1 &&
                     q_material.scarcity_cache <= 50 {
-                    q_product.manufacture(q_material, &q[i].1);
+                    q_product.manufacture(q_material, &q[i].1, variant.id);
                     q_product.deliver(&q[i].1);
                     let tmp = q.remove(i);
                     if instance.verbose {
-                        println!(" * Manufacturing {}x product #{} from priority {} production queue.",
-                                 tmp.1, tmp.0, q_product.priority+1);
+                        println!(" * Manufacturing {}x product #{}, variant {} from priority {} production queue.",
+                                 tmp.1, tmp.0, variant.id, q_product.priority+1);
                     }
                 }
                 else { i += 1; }
@@ -284,8 +283,8 @@ pub extern fn get_product_priority (instance: &Instance, id: &usize) -> usize {
 }
 
 #[no_mangle]
-pub extern fn get_product_variant (instance: &Instance, id: &usize) -> [usize; 2] {
-    let tmp = instance.products.get(id).unwrap().variants.first().unwrap().material_and_amount;
+pub extern fn get_product_variant (instance: &Instance, id: &usize, variant_id: usize) -> [usize; 2] {
+    let tmp = instance.products.get(id).unwrap().variants.get(variant_id).unwrap().material_and_amount;
     [tmp.0, tmp.1]
 }
 
