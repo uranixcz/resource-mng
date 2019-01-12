@@ -21,29 +21,29 @@ use resource_mng::*;
 
 pub struct RunResult {
     pub code: &'static u8,
-    pub name: usize,
+    pub primary_id: usize,
     pub amount: usize,
-    pub material_id: usize,
+    pub secondary_id: usize,
 }
 
-pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values: &usize) -> Result<RunResult, u8> {
+pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values: &usize) -> Result<RunResult, u8> {
     match fn_num {
-        &0 => { //add material
-            let name = rng.gen::<u16>() as usize;
+        0 => { //add material
+            let id = rng.gen::<u16>() as usize;
             let supply = rng.gen::<usize>() % max_values;
-            match add_material(instance, name, supply) {
+            match add_material(instance, id, supply) {
                 0 => {
                     Ok(RunResult {
                         code: &0,
-                        name,
+                        primary_id: id,
                         amount: supply,
-                        material_id: 999999998 //should not be displayed
+                        secondary_id: 999999998 //should not be displayed
                     })},
                 num => { Err(num) },
             }
         }
-        &1 => { // add product
-            let name = rng.gen::<u16>() as usize;
+        1 => { // add product
+            let id = rng.gen::<u16>() as usize;
             let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
@@ -53,19 +53,69 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 .1
                 .0.clone();
             //let work_complexity = rng.gen::<u8>();
-            match add_product(instance, name, material_id.clone(),
+            match add_product(instance, id, material_id.clone(),
                                        material_amount, priority) {
                 0 => Ok(RunResult {
                     code: &0,
-                    name,
+                    primary_id: id,
                     amount: material_amount,
-                    material_id
+                    secondary_id: material_id
                 }),
                 num => { Err(num) } //"Could not add product"
             }
         }
-        &2|&3|&4|&5|&6 => { // order product
+        2|3|4|5 => { // order product
             let amount = rng.gen::<usize>() % max_values /48;
+            let product_count = get_product_count(instance);
+            let rnd_index = if product_count > 0 {
+                rng.gen::<usize>() % product_count
+            } else { return Err(6) }; //"Product database is empty."
+            let id;
+            let tmp;
+            {let product_item = tst_get_products(instance).iter().enumerate()
+                .nth(rnd_index)
+                .unwrap().1;
+                id = product_item.0.clone();
+                tmp = product_item.1.get_variant(0).material_and_amount.clone();
+            }
+            let tmp1; let tmp2;
+            {//let tmp = product_item.1.get_variant(0).material_and_amount.clone();
+            tmp1 = tmp.0.clone();
+            tmp2 = tmp.1;} //fix me
+            match order_product(instance, id, amount, 0) {
+                1 => { //&0 not active atm
+                    //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();
+                    //process_queue(instance);
+                    Ok(RunResult {
+                        code: &1,
+                        primary_id: id.clone(),
+                        amount: amount * tmp2,
+                        secondary_id: tmp1,
+                    })},
+                4 => {
+                    process_queue(instance);
+                    Ok(RunResult {
+                        code: &4,
+                        primary_id: id.clone(),
+                        amount,
+                        secondary_id: tmp1,
+                    })},
+                5 => {
+                    process_queue(instance);
+                    Ok(RunResult {
+                        code: &5,
+                        primary_id: id.clone(),
+                        amount,
+                        secondary_id: tmp1,
+                    })},
+                num => {
+                    process_queue(instance);
+                    Err(num)
+                },
+            }
+
+        }
+        6|7 => { // add product variant
             let product_count = get_product_count(instance);
             let rnd_index = if product_count > 0 {
                 rng.gen::<usize>() % product_count
@@ -75,60 +125,46 @@ pub fn run(instance: &mut Instance, fn_num: &u8, rng: &mut ThreadRng, max_values
                 .unwrap()
                 .1
                 .0.clone();
-            let tmp1; let tmp2;
-            {let tmp = get_product_variants(instance, &id).first().unwrap().material_and_amount;
-            tmp1 = tmp.0.clone();
-            tmp2 = tmp.1;} //fix me
-            match order_product(instance, id, amount, 0) {
-                1 => { //&0 not active atm
-                    //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();
-                    process_queue(instance);
-                    Ok(RunResult {
-                        code: &1,
-                        name: id.clone(),
-                        amount: amount * tmp2,
-                        material_id: tmp1,
-                    })},
-                4 => {
-                    process_queue(instance);
-                    Ok(RunResult {
-                        code: &4,
-                        name: id.clone(),
-                        amount,
-                        material_id: tmp1,
-                    })},
-                5 => {
-                    process_queue(instance);
-                    Ok(RunResult {
-                        code: &5,
-                        name: id.clone(),
-                        amount,
-                        material_id: tmp1,
-                    })},
-                num => {
-                    process_queue(instance);
-                    Err(num)
-                },
-            }
 
+            let material_count = get_material_count(instance);
+            let rnd_index = if material_count > 0 {
+                rng.gen::<usize>() % material_count
+            } else { return Err(6) }; //"Material database is empty."
+            let material_id = tst_get_materials(instance).iter().enumerate()
+                .nth(rnd_index)
+                .unwrap()
+                .1
+                .0.clone();
+
+            let material_amount = rng.gen::<usize>() % max_values /32;
+
+            match add_product_variant(instance, id, material_id, material_amount) {
+                0 => Ok(RunResult {
+                    code: &0,
+                    primary_id: id,
+                    amount: 0,
+                    secondary_id: material_id
+                }),
+                num => Err(num), //"Could not add product"
+            }
         }
-        &7|&8|&9 => { // update supply
+        8|9 => { // update supply
             let amount = rng.gen::<usize>() % max_values;
             let material_count = get_material_count(instance);
             let rnd_index = if material_count > 0 {
                 rng.gen::<usize>() % material_count
             } else { return Err(1) }; //"No materials in database."
-            let name = tst_get_materials(instance).iter().enumerate()
+            let id = tst_get_materials(instance).iter().enumerate()
                 .nth(rnd_index)
                 .unwrap()
                 .1
                 .0.clone();
-            if update_supply(instance, name, amount) {
+            if update_supply(instance, id, amount) {
                 Ok(RunResult {
                     code: &0,
-                    name,
+                    primary_id: id,
                     amount,
-                    material_id: 999999999, //should not be displayed
+                    secondary_id: 999999999, //should not be displayed
                 })
             } else { Err(2) } //"Supply update failed"
         }

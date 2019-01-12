@@ -2,6 +2,7 @@
 name = "resource-mng"
 version = "0.1.3"
 authors = ["Michal Mauser <michal.mauser@zeitgeistmovement.cz>"]
+edition = "2018"
 
 [dependencies]
 rand = "0.4"

@@ -57,13 +57,13 @@ fn main() {
 
     while num < cycles || cycles == 0 {
         fn_num = rng.gen::<u8>() % 10;
-        evgen = event_generator::run(&mut instance, &fn_num, &mut rng, &max_values);
+        evgen = event_generator::run(&mut instance, fn_num, &mut rng, &max_values);
         match fn_num {
             0 => {
                 match evgen {
                     Ok(result) => {
                         println!("[{}] Přidávám materiál #{} do databáze; množství: {}",
-                                 num, result.name, result.amount);
+                                 num, result.primary_id, result.amount);
                         f0_count += 1;
                     },
                     Err(1) => {
@@ -88,7 +88,7 @@ fn main() {
                 match evgen {
                     Ok(result) => {
                         println!("[{}] Přidávám produkt #{} složen z {} kusů materiálu #{} \
-                        do databáze", num, result.name, result.amount, result.material_id);
+                        do databáze", num, result.primary_id, result.amount, result.secondary_id);
                         f1_count +=1;
                     },
                     Err(1) => {
@@ -116,26 +116,26 @@ fn main() {
                     }
                 }
             },
-            2|3|4|5|6 => {
+            2|3|4|5 => {
                 match evgen {
                     Ok(result) => {
                         //let tmp = instance.get_material_scarcity(&result.material_id);
                         match result.code {
                             &4 => {
                                 println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
-                        Materiál #{} není k dispozici; nedostatkovost: {}", num, result.amount, result.name, result.material_id,
-                                         get_material_scarcity(instance, &result.material_id));
+                        Materiál #{} není k dispozici; nedostatkovost: {}", num, result.amount, result.primary_id, result.secondary_id,
+                                         get_material_scarcity(instance, &result.secondary_id));
                                 failed_no_supply +=1;
                             },
                             &5 => { println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
-                        Materiál #{} nedostatkový: {} > 50.", num, result.amount, result.name, result.material_id,
-                                           get_material_scarcity(instance, &result.material_id));
+                        Materiál #{} nedostatkový: {} > 50.", num, result.amount, result.primary_id, result.secondary_id,
+                                             get_material_scarcity(instance, &result.secondary_id));
                                 failed_scarce +=1;
                             },
                             &_ => println!("[{}] Vyrábím produkt #{} \
                         za cenu {} kusů materiálu #{}, nedostatkovost: {}",
-                                           num, result.name, result.amount, result.material_id,
-                                           get_material_scarcity(instance, &result.material_id)),
+                                           num, result.primary_id, result.amount, result.secondary_id,
+                                           get_material_scarcity(instance, &result.secondary_id)),
                         }
                         f2_count +=1;
                     },
@@ -167,13 +167,24 @@ fn main() {
                     }
                 }
             },
-            7|8|9 => {
+            6|7 => {
+                match evgen {
+                    Ok(result) => {
+                        println!("[{}] Přidávám novou variantu produktu #{} \
+                        z materiálu #{}.", num, result.primary_id, result.secondary_id);
+                    },
+                    Err(_) => {
+                        println!("[{}] Přidání nové varianty selhalo. Produkt nebo materiál neexistuje.", num);
+                    }
+                }
+            }
+            8|9 => {
                 match evgen {
                     Ok(result) => {
                         println!("[{}] Aktualizuji nabídku materiálu #{} na {} ks; \
-                        poptávka: {}, nedostatkovost: {}", num, result.name, result.amount,
-                                 get_material_demand(instance, &result.name),
-                                 tst_get_material(instance, &result.name).calculate_scarcity()
+                        poptávka: {}, nedostatkovost: {}", num, result.primary_id, result.amount,
+                                 get_material_demand(instance, &result.primary_id),
+                                 tst_get_material(instance, &result.primary_id).get_scarcity()
                                  );
                         f3_count +=1;
                     },
