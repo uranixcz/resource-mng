@@ -18,7 +18,7 @@
 extern crate resource_mng;
 extern crate rand;
 
-mod event_generator;
+pub mod event_generator;
 
 use std::{thread, time};
 use std::env;
@@ -132,7 +132,7 @@ fn main() {
                                              get_material_scarcity(instance, &result.secondary_id));
                                 failed_scarce +=1;
                             },
-                            &_ => println!("[{}] Vyrábím produkt #{} \
+                            &_ => println!("[{}] Doplňuji produkt #{} do výrobní fronty \
                         za cenu {} kusů materiálu #{}, nedostatkovost: {}",
                                            num, result.primary_id, result.amount, result.secondary_id,
                                            get_material_scarcity(instance, &result.secondary_id)),

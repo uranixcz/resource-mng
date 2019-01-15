@@ -37,14 +37,14 @@ impl Product {
         //product.demand -= amount;
     }
 
-    fn manufacture_by_id(&mut self, material: &mut Material, amount: usize, variant_id: usize) {
+    /*fn manufacture_by_id(&mut self, material: &mut Material, amount: usize, variant_id: usize) {
         let index = self.variants.iter().position(|x| x.id == variant_id).unwrap();
         let material_amount = self.variants[index].material_and_amount.1 * amount;
         material.supply -= material_amount;
         material.demand -= material_amount;
         self.supply += amount;
         //product.demand -= amount;
-    }
+    }*/
 
     fn deliver (&mut self, amount: usize) {
         self.supply -= amount;
@@ -188,12 +188,8 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
         { //mat.demand -= amount * prod.types.material_amount.1;
             code = 5; //Material scarce.
         }
-        if code == 4 || code ==5 {
-            production_queue[prod.priority].push((id, amount));
-        } else {
-            prod.manufacture_by_id(&mut material, amount, variant_id);
-            prod.deliver(amount);
-        }
+
+        production_queue[prod.priority].push((id, amount));
     }
     instance.materials.insert(variant.material_and_amount.0.clone(), material);
     products.insert(id, prod);
@@ -219,8 +215,7 @@ pub extern fn process_queue(instance: &mut Instance) {
             for variant in q_product.variants.clone() {
                 let q_material = instance.materials.get_mut(&variant.material_and_amount.0).unwrap();
                 let material_amount = q[i].1 * variant.material_and_amount.1;
-                if q_material.supply >= material_amount &&
-                    q_material.scarcity_cache <= 50 {
+                if q_material.supply >= material_amount {
                     q_material.demand += material_amount;
                     q_product.manufacture(q_material, q[i].1, &variant);
                     q_product.deliver(q[i].1);
