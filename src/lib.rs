@@ -223,9 +223,12 @@ pub extern fn process_queue(instance: &mut Instance) {
                 variant_material.scarcity_cache = variant_material.get_scarcity();
                 variant.components.scarcity_cache = variant_material.scarcity_cache;
             }
-            q_product.variants.sort_unstable();
-            let swap = q_product.variants.iter().position(|x| x.id == q[i].preferred_variant).unwrap();
-            q_product.variants.swap(0, swap);
+            if q_product.variants.len() >= 2 {
+                let index = q_product.variants.iter().position(|x| x.id == q[i].preferred_variant).unwrap();
+                let swap = q_product.variants.remove(index);
+                if q_product.variants.len() >= 2 { q_product.variants.sort_unstable(); }
+                q_product.variants.insert(0, swap);
+            }
 
             for variant in q_product.variants.clone() {
                 let q_material = instance.materials.get_mut(&variant.components.material_id).unwrap();
