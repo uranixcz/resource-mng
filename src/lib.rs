@@ -108,10 +108,16 @@ impl Material {
     }
 }
 
+struct Order {
+    product_id: usize,
+    product_amount: usize,
+    preferred_variant: usize,
+}
+
 pub struct Instance {
     materials: HashMap<usize,Material>,
     products: HashMap<usize,Product>,
-    production_queue: [Vec<(usize, usize)>; 4],
+    production_queue: [Vec<Order>; 4],
     pub verbose: bool,
 }
 
@@ -196,7 +202,7 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
             code = 5; //Material scarce.
         }
 
-        production_queue[prod.priority].push((id, amount));
+        production_queue[prod.priority].push(Order { product_id: id, product_amount: amount, preferred_variant: variant_id });
     }
     instance.materials.insert(variant.components.material_id.clone(), material);
     products.insert(id, prod);
@@ -210,7 +216,7 @@ pub extern fn process_queue(instance: &mut Instance) {
         //let mut to_remove = Vec::new();
         while i != q.len() {
             let mut found = false;
-            let q_product = instance.products.get_mut(&q[i].0).unwrap();
+            let q_product = instance.products.get_mut(&q[i].product_id).unwrap();
 
             for variant in q_product.variants.iter_mut() {
                 let variant_material = instance.materials.get_mut(&variant.components.material_id).unwrap();
@@ -218,18 +224,20 @@ pub extern fn process_queue(instance: &mut Instance) {
                 variant.components.scarcity_cache = variant_material.scarcity_cache;
             }
             q_product.variants.sort_unstable();
+            let swap = q_product.variants.iter().position(|x| x.id == q[i].preferred_variant).unwrap();
+            q_product.variants.swap(0, swap);
 
             for variant in q_product.variants.clone() {
                 let q_material = instance.materials.get_mut(&variant.components.material_id).unwrap();
-                let material_amount = q[i].1 * variant.components.material_amount;
+                let material_amount = q[i].product_amount * variant.components.material_amount;
                 if q_material.supply >= material_amount {
-                    q_material.demand += material_amount;
-                    q_product.manufacture(q_material, q[i].1, &variant);
-                    q_product.deliver(q[i].1);
+                    if variant.id != q[i].preferred_variant {q_material.demand += material_amount;}
+                    q_product.manufacture(q_material, q[i].product_amount, &variant);
+                    q_product.deliver(q[i].product_amount);
                     let tmp = q.remove(i);
                     if instance.verbose {
                         println!(" * Manufacturing {}x product #{}, variant {} from priority {} production queue.",
-                                 tmp.1, tmp.0, variant.id, q_product.priority+1);
+                                 tmp.product_amount, tmp.product_id, variant.id, q_product.priority+1);
                     }
                     found = true;
                     break;

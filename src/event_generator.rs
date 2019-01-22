@@ -160,6 +160,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                 .1
                 .0.clone();
             if update_supply(instance, id, amount) {
+                process_queue(instance);
                 Ok(RunResult {
                     code: &0,
                     primary_id: id,
