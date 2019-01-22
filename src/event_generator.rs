@@ -76,12 +76,12 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                 .nth(rnd_index)
                 .unwrap().1;
                 id = product_item.0.clone();
-                tmp = product_item.1.get_variant(0).material_and_amount.clone();
+                tmp = product_item.1.get_variant(0).components.clone();
             }
             let tmp1; let tmp2;
             {//let tmp = product_item.1.get_variant(0).material_and_amount.clone();
-            tmp1 = tmp.0.clone();
-            tmp2 = tmp.1;} //fix me
+            tmp1 = tmp.material_id.clone();
+            tmp2 = tmp.material_amount;} //fix me
             match order_product(instance, id, amount, 0) {
                 1 => { //&0 not active atm
                     //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();

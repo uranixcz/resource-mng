@@ -18,7 +18,7 @@
 use std::collections::HashMap;
 use std::cmp::Ordering;
 
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct Product {
     //name: String,
     variants: Vec<ProductVariant>,
@@ -30,7 +30,7 @@ pub struct Product {
 
 impl Product {
     fn manufacture(&mut self, material: &mut Material, amount: usize, variant: &ProductVariant) {
-        let material_amount = variant.material_and_amount.1 * amount;
+        let material_amount = variant.components.material_amount * amount;
         material.supply -= material_amount;
         material.demand -= material_amount;
         self.supply += amount;
@@ -56,17 +56,17 @@ impl Product {
     }
 }
 
-#[derive(Debug)]
+//#[derive(Debug)]
 #[derive(Copy, Clone, Eq)]
 pub struct ProductVariant {
     id: usize,
-    pub material_and_amount: (usize, usize, usize), //change to materials in the future
+    pub components: Component, //change to vec in the future
     //work_complexity: u8,
 }
 
 impl Ord for ProductVariant {
     fn cmp(&self, other: &ProductVariant) -> Ordering {
-        self.material_and_amount.2.cmp(&other.material_and_amount.2)
+        self.components.scarcity_cache.cmp(&other.components.scarcity_cache)
     }
 }
 
@@ -78,8 +78,15 @@ impl PartialOrd for ProductVariant {
 
 impl PartialEq for ProductVariant {
     fn eq(&self, other: &ProductVariant) -> bool {
-        self.material_and_amount.2 == other.material_and_amount.2
+        self.components.scarcity_cache == other.components.scarcity_cache
     }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct Component {
+    pub material_id: usize,
+    pub material_amount: usize,
+    pub scarcity_cache: usize,
 }
 
 #[derive(Debug)]
@@ -147,7 +154,7 @@ pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: u
         //name,
         variants: vec![ProductVariant {
             id: 0,
-            material_and_amount: (material_id, material_amount, 0),
+            components: Component { material_id, material_amount, scarcity_cache: 0 },
             //work_complexity,
         }],
         supply: 0,
@@ -166,12 +173,12 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
 
     let variant = prod.get_variant(variant_id).clone();
     let production_queue = &mut instance.production_queue;
-    let mut material = match instance.materials.remove(&variant.material_and_amount.0) {
+    let mut material = match instance.materials.remove(&variant.components.material_id) {
         Some(m) => m,
         None => return 3, //No such material in database.
     };
     prod.demand += amount;
-    material.demand += amount * variant.material_and_amount.1;
+    material.demand += amount * variant.components.material_amount;
     material.scarcity_cache = material.get_scarcity();
 
     let mut code = 1;
@@ -180,7 +187,7 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
         //code = &0; //ok
         panic!("cannot happen right now");
     } else {
-        if material.supply < (amount * variant.material_and_amount.1) //only a dev safeguard
+        if material.supply < (amount * variant.components.material_amount) //only a dev safeguard
         { //mat.demand -= amount * prod.types.material_amount.1;
             code = 4; //Material not available.
         }
@@ -191,7 +198,7 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
 
         production_queue[prod.priority].push((id, amount));
     }
-    instance.materials.insert(variant.material_and_amount.0.clone(), material);
+    instance.materials.insert(variant.components.material_id.clone(), material);
     products.insert(id, prod);
     return code;
 }
@@ -206,15 +213,15 @@ pub extern fn process_queue(instance: &mut Instance) {
             let q_product = instance.products.get_mut(&q[i].0).unwrap();
 
             for variant in q_product.variants.iter_mut() {
-                let variant_material = instance.materials.get_mut(&variant.material_and_amount.0).unwrap();
+                let variant_material = instance.materials.get_mut(&variant.components.material_id).unwrap();
                 variant_material.scarcity_cache = variant_material.get_scarcity();
-                variant.material_and_amount.2 = variant_material.scarcity_cache;
+                variant.components.scarcity_cache = variant_material.scarcity_cache;
             }
             q_product.variants.sort_unstable();
 
             for variant in q_product.variants.clone() {
-                let q_material = instance.materials.get_mut(&variant.material_and_amount.0).unwrap();
-                let material_amount = q[i].1 * variant.material_and_amount.1;
+                let q_material = instance.materials.get_mut(&variant.components.material_id).unwrap();
+                let material_amount = q[i].1 * variant.components.material_amount;
                 if q_material.supply >= material_amount {
                     q_material.demand += material_amount;
                     q_product.manufacture(q_material, q[i].1, &variant);
@@ -255,7 +262,7 @@ pub extern fn add_product_variant(instance: &mut Instance, product_id: usize, ma
     let variant_id = product.variants.len(); //this must be changed when remove_product_variant is implemented!
     product.variants.push(ProductVariant {
         id: variant_id,
-        material_and_amount: (material_id, material_amount, 0)
+        components: Component {material_id, material_amount, scarcity_cache: 0}
     });
     0
 }
@@ -304,8 +311,8 @@ pub extern fn get_product_priority (instance: &Instance, id: &usize) -> usize {
 
 #[no_mangle]
 pub extern fn get_product_variant (instance: &Instance, product_id: &usize, variant_id: usize) -> [usize; 2] {
-    let tmp = instance.products.get(product_id).unwrap().variants.get(variant_id).unwrap().material_and_amount; //fixme
-    [tmp.0, tmp.1]
+    let tmp: Component = instance.products.get(product_id).unwrap().variants.get(variant_id).unwrap().components; //fixme
+    [tmp.material_id, tmp.material_amount]
 }
 
 pub fn get_product_variants<'a>(instance: &'a Instance, id: &usize) -> &'a Vec<ProductVariant> {
@@ -355,7 +362,7 @@ mod tests {
         add_material(instance, 1234, 8);
         add_product(instance, 12345, 1234, 10, 0);
         add_product(instance, 12345, 1234, 5, 0);
-        assert_eq!(instance.products.get(&12345).unwrap().variants.first().unwrap().material_and_amount.1, 10);
+        assert_eq!(instance.products.get(&12345).unwrap().variants.first().unwrap().components.material_amount, 10);
     }
 
     #[test]
