@@ -20,6 +20,9 @@ extern crate rand;
 
 pub mod event_generator;
 
+#[cfg(target_family = "windows")]
+use std::io::Read;
+
 use std::{thread, time};
 use std::env;
 use rand::Rng;
@@ -34,7 +37,8 @@ fn main() {
         millis = args[2].parse().unwrap();
     } else {
         cycles = 500;
-        millis = 0;
+        if cfg!(windows) { millis = 500; }
+        else { millis = 0 }
     }
     let mut rng = rand::thread_rng();
     let mut instance = init();
@@ -212,4 +216,6 @@ fn main() {
     Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
              num, f0_count, f1_count, f2_count, f3_count);
     eprintln!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
+    #[cfg(target_family = "windows")]
+        std::io::stdin().read(&mut [0u8]).unwrap();
 }
