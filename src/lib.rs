@@ -15,8 +15,12 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+mod internals;
+
 use std::collections::HashMap;
 use std::cmp::Ordering;
+
+const PRIORITIES: usize = 4;
 
 //#[derive(Debug)]
 pub struct Product {
@@ -108,7 +112,7 @@ impl Material {
     }
 }
 
-struct Order {
+pub struct Order {
     product_id: usize,
     product_amount: usize,
     preferred_variant: usize,
@@ -117,7 +121,7 @@ struct Order {
 pub struct Instance {
     materials: HashMap<usize,Material>,
     products: HashMap<usize,Product>,
-    production_queue: [Vec<Order>; 4],
+    production_queue: [Vec<Order>; PRIORITIES],
     pub verbose: bool,
 }
 
@@ -206,62 +210,42 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
     }
     instance.materials.insert(variant.components.material_id.clone(), material);
     products.insert(id, prod);
-    return code;
+
+    if code != 1 {
+        internals::process_queue(&mut instance.production_queue,
+                               &mut instance.products,
+                               &mut instance.materials,
+                               instance.verbose);
+    }
+
+    code
 }
 
 #[no_mangle]
 pub extern fn process_queue(instance: &mut Instance) {
-    for q in instance.production_queue.iter_mut() {
-        let mut i:usize = 0;
-        //let mut to_remove = Vec::new();
-        while i != q.len() {
-            let mut found = false;
-            let q_product = instance.products.get_mut(&q[i].product_id).unwrap();
-
-            for variant in q_product.variants.iter_mut() {
-                let variant_material = instance.materials.get_mut(&variant.components.material_id).unwrap();
-                variant_material.scarcity_cache = variant_material.get_scarcity();
-                variant.components.scarcity_cache = variant_material.scarcity_cache;
-            }
-            if q_product.variants.len() >= 2 {
-                let index = q_product.variants.iter().position(|x| x.id == q[i].preferred_variant).unwrap();
-                let swap = q_product.variants.remove(index);
-                if q_product.variants.len() >= 2 { q_product.variants.sort_unstable(); }
-                q_product.variants.insert(0, swap);
-            }
-
-            for variant in q_product.variants.clone() {
-                let q_material = instance.materials.get_mut(&variant.components.material_id).unwrap();
-                let material_amount = q[i].product_amount * variant.components.material_amount;
-                if q_material.supply >= material_amount {
-                    if variant.id != q[i].preferred_variant {q_material.demand += material_amount;}
-                    q_product.manufacture(q_material, q[i].product_amount, &variant);
-                    q_product.deliver(q[i].product_amount);
-                    let tmp = q.remove(i);
-                    if instance.verbose {
-                        println!(" * Manufacturing {}x product #{}, variant {} from priority {} production queue.",
-                                 tmp.product_amount, tmp.product_id, variant.id, q_product.priority+1);
-                    }
-                    found = true;
-                    break;
-                }
-            }
-            if !found { i += 1; }
-        }
-    }
+    internals::process_queue(&mut instance.production_queue,
+                           &mut instance.products,
+                           &mut instance.materials,
+                           instance.verbose);
 }
 
 //pub fn is_in_supply() {}
 
 #[no_mangle]
 pub extern fn update_supply(instance: &mut Instance, id: usize, amount: usize) -> bool {
-    match instance.materials.get_mut(&id) {
+    let result = match instance.materials.get_mut(&id) {
         Some(x) => {
             x.supply = amount;
             true
         },
         None => false
-    }
+    };
+    internals::process_queue(&mut instance.production_queue,
+                           &mut instance.products,
+                           &mut instance.materials,
+                           instance.verbose);
+
+    result
 }
 
 #[no_mangle]

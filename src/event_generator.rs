@@ -85,7 +85,6 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             match order_product(instance, id, amount, 0) {
                 1 => { //&0 not active atm
                     //let (tmp, tmp1) = instance.get_product_types(&name).material_amount.clone_into();
-                    //process_queue(instance);
                     Ok(RunResult {
                         code: &1,
                         primary_id: id.clone(),
@@ -93,7 +92,6 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                         secondary_id: tmp1,
                     })},
                 4 => {
-                    process_queue(instance);
                     Ok(RunResult {
                         code: &4,
                         primary_id: id.clone(),
@@ -101,7 +99,6 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                         secondary_id: tmp1,
                     })},
                 5 => {
-                    process_queue(instance);
                     Ok(RunResult {
                         code: &5,
                         primary_id: id.clone(),
@@ -109,7 +106,6 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                         secondary_id: tmp1,
                     })},
                 num => {
-                    process_queue(instance);
                     Err(num)
                 },
             }
@@ -160,7 +156,6 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                 .1
                 .0.clone();
             if update_supply(instance, id, amount) {
-                process_queue(instance);
                 Ok(RunResult {
                     code: &0,
                     primary_id: id,
