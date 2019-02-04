@@ -18,7 +18,12 @@
 use std::collections::HashMap;
 use crate::{Order, Product, Material, PRIORITIES};
 
-pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES], products: &mut HashMap<usize,Product>, materials: &mut HashMap<usize,Material>, verbose: bool) {
+pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
+                     products: &mut HashMap<usize,Product>,
+                     materials: &mut HashMap<usize,Material>,
+                     finished_products: &mut Vec<Order>,
+                     verbose: bool)
+{
     for q in production_queue.iter_mut() {
         let mut i:usize = 0;
         //let mut to_remove = Vec::new();
@@ -45,11 +50,12 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES], products: 
                     if variant.id != q[i].preferred_variant {q_material.demand += material_amount;}
                     q_product.manufacture(q_material, q[i].product_amount, &variant);
                     q_product.deliver(q[i].product_amount);
-                    let tmp = q.remove(i);
+                    let finished_product = q.remove(i);
                     if verbose {
                         println!(" * Manufacturing {}x product #{}, variant {} from priority {} production queue.",
-                                 tmp.product_amount, tmp.product_id, variant.id, q_product.priority+1);
+                                 finished_product.product_amount, finished_product.product_id, variant.id, q_product.priority+1);
                     }
+                    finished_products.push(finished_product);
                     found = true;
                     break;
                 }

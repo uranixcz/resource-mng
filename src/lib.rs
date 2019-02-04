@@ -117,12 +117,15 @@ pub struct Order {
     product_id: usize,
     product_amount: usize,
     preferred_variant: usize,
+    user_id: usize,
+    allow_substitution: bool,
 }
 
 pub struct Instance {
     materials: HashMap<usize,Material>,
     products: HashMap<usize,Product>,
     production_queue: [Vec<Order>; PRIORITIES],
+    finished_products: Vec<Order>,
     pub verbose: bool,
 }
 
@@ -132,6 +135,7 @@ pub extern fn init() -> Box<Instance> {
         materials: HashMap::new(),
         products: HashMap::new(),
         production_queue: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+        finished_products: Vec::new(),
         verbose: false,
     })
 }
@@ -180,7 +184,13 @@ pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: u
 }
 
 #[no_mangle]
-pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, variant_id: usize) -> u8 {
+pub extern fn order_product(instance: &mut Instance,
+                            id: usize,
+                            amount: usize,
+                            variant_id: usize,
+                            user_id: usize,
+                            allow_substitution: bool) -> u8
+{
     const OK_QUEUE: u8 = 1;
     const CANNOT_ORDER_0_PRODUCTS: u8 = 2;
     const NO_SUCH_MATERIAL: u8 = 3;
@@ -217,16 +227,23 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
             code = MATERIAL_SCARCE; //Material scarce.
         }
 
-        production_queue[prod.priority].push(Order { product_id: id, product_amount: amount, preferred_variant: variant_id });
+        production_queue[prod.priority].push(Order {
+            product_id: id,
+            product_amount: amount,
+            preferred_variant: variant_id,
+            user_id,
+            allow_substitution
+        });
     }
     instance.materials.insert(variant.components.material_id.clone(), material);
     products.insert(id, prod);
 
     if code != OK_QUEUE {
         internals::process_queue(&mut instance.production_queue,
-                               &mut instance.products,
-                               &mut instance.materials,
-                               instance.verbose);
+                                 &mut instance.products,
+                                 &mut instance.materials,
+                                 &mut instance.finished_products,
+                                 instance.verbose);
     }
 
     code
@@ -235,9 +252,10 @@ pub extern fn order_product(instance: &mut Instance, id: usize, amount: usize, v
 #[no_mangle]
 pub extern fn process_queue(instance: &mut Instance) {
     internals::process_queue(&mut instance.production_queue,
-                           &mut instance.products,
-                           &mut instance.materials,
-                           instance.verbose);
+                             &mut instance.products,
+                             &mut instance.materials,
+                             &mut instance.finished_products,
+                             instance.verbose);
 }
 
 //pub fn is_in_supply() {}
@@ -252,9 +270,10 @@ pub extern fn update_supply(instance: &mut Instance, id: usize, amount: usize) -
         None => false
     };
     internals::process_queue(&mut instance.production_queue,
-                           &mut instance.products,
-                           &mut instance.materials,
-                           instance.verbose);
+                             &mut instance.products,
+                             &mut instance.materials,
+                             &mut instance.finished_products,
+                             instance.verbose);
 
     result
 }
@@ -321,6 +340,11 @@ pub extern fn get_product_priority (instance: &Instance, id: &usize) -> usize {
 pub extern fn get_product_variant (instance: &Instance, product_id: &usize, variant_id: usize) -> [usize; 2] {
     let tmp: Component = instance.products.get(product_id).unwrap().variants.get(variant_id).unwrap().components; //fixme
     [tmp.material_id, tmp.material_amount]
+}
+
+#[no_mangle]
+pub extern fn get_next_finished (instance: &mut Instance) -> Option<Order> {
+    instance.finished_products.pop()
 }
 
 pub fn get_product_variants<'a>(instance: &'a Instance, id: &usize) -> &'a Vec<ProductVariant> {
