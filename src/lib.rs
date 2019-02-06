@@ -87,6 +87,7 @@ impl PartialEq for ProductVariant {
     }
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct Component {
     pub material_id: usize,
@@ -113,12 +114,19 @@ impl Material {
     }
 }
 
+#[repr(C)]
 pub struct Order {
     product_id: usize,
     product_amount: usize,
     preferred_variant: usize,
     user_id: usize,
     allow_substitution: bool,
+}
+
+#[repr(C)]
+pub struct COption<T> {
+    is_some: bool,
+    data: T
 }
 
 pub struct Instance {
@@ -337,14 +345,22 @@ pub extern fn get_product_priority (instance: &Instance, id: &usize) -> usize {
 }
 
 #[no_mangle]
-pub extern fn get_product_variant (instance: &Instance, product_id: &usize, variant_id: usize) -> [usize; 2] {
-    let tmp: Component = instance.products.get(product_id).unwrap().variants.get(variant_id).unwrap().components; //fixme
-    [tmp.material_id, tmp.material_amount]
+pub extern fn get_product_variant (instance: &Instance, product_id: &usize, variant_id: usize) -> Component {
+    instance.products.get(product_id).unwrap().variants.get(variant_id).unwrap().components
 }
 
 #[no_mangle]
-pub extern fn get_next_finished (instance: &mut Instance) -> Option<Order> {
-    instance.finished_products.pop()
+pub extern fn get_next_finished (instance: &mut Instance) -> COption<Order> {
+    match instance.finished_products.pop() {
+        Some(p) => COption { is_some: true, data: p},
+        None => COption { is_some: false, data: Order {
+            product_id: 0,
+            product_amount: 0,
+            preferred_variant: 0,
+            user_id: 0,
+            allow_substitution: false
+        }}
+    }
 }
 
 pub fn get_product_variants<'a>(instance: &'a Instance, id: &usize) -> &'a Vec<ProductVariant> {
