@@ -17,7 +17,7 @@ fn order_enough_mat() {
     let instance = &mut resource_mng::init();
 
     add_material(instance, 123,80);
-    add_product(instance, 1234, 123, 10, 0);
+    add_product(instance, 1234, 123, 10, 0, 1.0);
     assert_eq!(order_product(instance, 1234, 8, 0, 0, true), 1);
 }
 
@@ -26,7 +26,7 @@ fn order_nenough_mat() {
     let instance = &mut resource_mng::init();
 
     add_material(instance, 123, 79);
-    add_product(instance, 1234, 123, 10, 0);
+    add_product(instance, 1234, 123, 10, 0, 1.0);
     assert_eq!(order_product(instance, 1234, 8, 0, 0, true), 4);
 }
 
@@ -35,8 +35,8 @@ fn order_two_same_mat() {
     let instance = &mut resource_mng::init();
 
     add_material(instance, 123,80);
-    add_product(instance, 1234, 123, 10, 0);
-    add_product(instance, 1235, 123, 10, 0);
+    add_product(instance, 1234, 123, 10, 0, 1.0);
+    add_product(instance, 1235, 123, 10, 0, 1.0);
     assert_eq!(order_product(instance, 1234, 7, 0, 0, true), 1);
     //process_queue(instance);
     assert_eq!(order_product(instance, 1235, 1, 0, 0, true), 1);

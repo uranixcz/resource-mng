@@ -62,16 +62,20 @@ impl Product {
 }
 
 //#[derive(Debug)]
-#[derive(Copy, Clone, Eq)]
+#[derive(Copy, Clone)]
 pub struct ProductVariant {
     id: usize,
     pub components: Component, //change to vec in the future
-    //work_complexity: u8,
+    work_complexity: f64,
 }
 
 impl Ord for ProductVariant {
     fn cmp(&self, other: &ProductVariant) -> Ordering {
-        self.components.scarcity_cache.cmp(&other.components.scarcity_cache)
+        let my = self.components.scarcity_cache as f64 * self.work_complexity;
+        let other = other.components.scarcity_cache as f64 * other.work_complexity;
+        if my == other { return Ordering::Equal }
+        if my > other { return Ordering::Greater }
+        else { return Ordering::Less }
     }
 }
 
@@ -83,9 +87,13 @@ impl PartialOrd for ProductVariant {
 
 impl PartialEq for ProductVariant {
     fn eq(&self, other: &ProductVariant) -> bool {
-        self.components.scarcity_cache == other.components.scarcity_cache
+        let my = self.components.scarcity_cache as f64 * self.work_complexity;
+        let other = other.components.scarcity_cache as f64 * other.work_complexity;
+        my == other
     }
 }
+
+impl Eq for ProductVariant {}
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -169,7 +177,7 @@ pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: usize
 }
 
 #[no_mangle]
-pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: usize, material_amount: usize, priority: usize) -> u8 {
+pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: usize, material_amount: usize, priority: usize, work_complexity: f64) -> u8 {
     const ZERO_MATERIAL: u8 = 3;
     const NO_SUCH_MATERIAL: u8 = 4;
     const NO_SUCH_PRODUCT: u8 = 5;
@@ -182,7 +190,7 @@ pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: u
         variants: vec![ProductVariant {
             id: 0,
             components: Component { material_id, material_amount, scarcity_cache: 0 },
-            //work_complexity,
+            work_complexity,
         }],
         supply: 0,
         demand: 0,
@@ -287,7 +295,7 @@ pub extern fn update_supply(instance: &mut Instance, id: usize, amount: usize) -
 }
 
 #[no_mangle]
-pub extern fn add_product_variant(instance: &mut Instance, product_id: usize, material_id: usize, material_amount: usize) -> u8 {
+pub extern fn add_product_variant(instance: &mut Instance, product_id: usize, material_id: usize, material_amount: usize, work_complexity: f64) -> u8 {
     const NO_SUCH_PRODUCT: u8 = 1;
     const NO_SUCH_MATERIAL: u8 = 2;
 
@@ -297,7 +305,8 @@ pub extern fn add_product_variant(instance: &mut Instance, product_id: usize, ma
     let variant_id = product.variants.len(); //this must be changed when remove_product_variant is implemented!
     product.variants.push(ProductVariant {
         id: variant_id,
-        components: Component {material_id, material_amount, scarcity_cache: 0}
+        components: Component {material_id, material_amount, scarcity_cache: 0},
+        work_complexity,
     });
     0
 }
@@ -401,15 +410,15 @@ mod tests {
     #[test]
     fn add_product_without_material() {
         let instance = &mut init();
-        assert_ne!(!add_product(instance, 1234, 12345, 10, 0),0);
+        assert_ne!(!add_product(instance, 1234, 12345, 10, 0, 1.0),0);
     }
 
     #[test]
     fn add_same_product() {
         let instance = &mut init();
         add_material(instance, 1234, 8);
-        add_product(instance, 12345, 1234, 10, 0);
-        add_product(instance, 12345, 1234, 5, 0);
+        add_product(instance, 12345, 1234, 10, 0, 1.0);
+        add_product(instance, 12345, 1234, 5, 0, 1.0);
         assert_eq!(instance.products.get(&12345).unwrap().variants.first().unwrap().components.material_amount, 10);
     }
 
@@ -417,6 +426,6 @@ mod tests {
     fn add_prod_zero_mat() {
         let instance = &mut init();
         add_material(instance, 1234, 8);
-        assert_ne!(add_product(instance, 1234, 1234, 0, 0), 0);
+        assert_ne!(add_product(instance, 1234, 1234, 0, 0, 1.0), 0);
     }
 }
