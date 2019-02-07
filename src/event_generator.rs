@@ -47,14 +47,15 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             let material_amount = rng.gen::<usize>() % max_values /32;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
+            let work_complexity = rng.gen_range::<f64>(1.0, 5.0);
             let material_id = tst_get_materials(instance).iter().enumerate()
                 .nth(rnd_index)
                 .unwrap()
                 .1
                 .0.clone();
             //let work_complexity = rng.gen::<u8>();
-            match add_product(instance, id, material_id.clone(),
-                                       material_amount, priority, 1.0) {
+            match add_product(instance, id, material_id,
+                                       material_amount, priority, work_complexity) {
                 0 => Ok(RunResult {
                     code: &0,
                     primary_id: id,
@@ -133,8 +134,9 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                 .0.clone();
 
             let material_amount = rng.gen::<usize>() % max_values /32;
+            let work_complexity = rng.gen_range::<f64>(1.0, 5.0);
 
-            match add_product_variant(instance, id, material_id, material_amount, 1.0) {
+            match add_product_variant(instance, id, material_id, material_amount, work_complexity) {
                 0 => Ok(RunResult {
                     code: &0,
                     primary_id: id,

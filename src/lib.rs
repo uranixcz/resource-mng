@@ -71,8 +71,8 @@ pub struct ProductVariant {
 
 impl Ord for ProductVariant {
     fn cmp(&self, other: &ProductVariant) -> Ordering {
-        let my = self.components.scarcity_cache as f64 * self.work_complexity;
-        let other = other.components.scarcity_cache as f64 * other.work_complexity;
+        let my = self.components.scarcity_cache as f64 / self.work_complexity;
+        let other = other.components.scarcity_cache as f64 / other.work_complexity;
         if my == other { return Ordering::Equal }
         if my > other { return Ordering::Greater }
         else { return Ordering::Less }
@@ -87,8 +87,8 @@ impl PartialOrd for ProductVariant {
 
 impl PartialEq for ProductVariant {
     fn eq(&self, other: &ProductVariant) -> bool {
-        let my = self.components.scarcity_cache as f64 * self.work_complexity;
-        let other = other.components.scarcity_cache as f64 * other.work_complexity;
+        let my = self.components.scarcity_cache as f64 / self.work_complexity;
+        let other = other.components.scarcity_cache as f64 / other.work_complexity;
         my == other
     }
 }
@@ -106,7 +106,6 @@ pub struct Component {
 #[derive(Debug)]
 #[derive(Copy, Clone)]
 pub struct Material {
-    //name: String,
     pub scarcity_cache: usize,
     pub demand: usize,
     pub supply: usize,
