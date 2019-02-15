@@ -39,7 +39,7 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
             if q_product.variants.len() >= 2 {
                 let index = q_product.variants.iter().position(|x| x.id == q[i].preferred_variant).unwrap();
                 let swap = q_product.variants.remove(index);
-                if q_product.variants.len() >= 2 { q_product.variants.sort_unstable(); }
+                if q_product.variants.len() >= 2 { q_product.variants.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap()); }
                 q_product.variants.insert(0, swap);
             }
 

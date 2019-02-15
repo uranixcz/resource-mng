@@ -136,7 +136,7 @@ fn main() {
                                              get_material_scarcity(instance, &result.secondary_id));
                                 failed_scarce +=1;
                             },
-                            &_ => println!("[{}] Appending product #{} to production queue \
+                            &_ => println!("[{}] Adding product #{} to production queue \
                         at the cost of {}x material #{}; scarcity: {}",
                                            num, result.primary_id, result.amount, result.secondary_id,
                                            get_material_scarcity(instance, &result.secondary_id)),

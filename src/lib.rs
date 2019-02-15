@@ -69,19 +69,11 @@ pub struct ProductVariant {
     work_complexity: f64,
 }
 
-impl Ord for ProductVariant {
-    fn cmp(&self, other: &ProductVariant) -> Ordering {
-        let my = self.components.scarcity_cache as f64 / self.work_complexity;
-        let other = other.components.scarcity_cache as f64 / other.work_complexity;
-        if my == other { return Ordering::Equal }
-        if my > other { return Ordering::Greater }
-        else { return Ordering::Less }
-    }
-}
-
 impl PartialOrd for ProductVariant {
     fn partial_cmp(&self, other: &ProductVariant) -> Option<Ordering> {
-        Some(self.cmp(other))
+        let my = self.components.scarcity_cache as f64 / self.work_complexity;
+        let other = other.components.scarcity_cache as f64 / other.work_complexity;
+        my.partial_cmp(&other)
     }
 }
 
@@ -92,8 +84,6 @@ impl PartialEq for ProductVariant {
         my == other
     }
 }
-
-impl Eq for ProductVariant {}
 
 #[repr(C)]
 #[derive(Copy, Clone, Eq, PartialEq)]
