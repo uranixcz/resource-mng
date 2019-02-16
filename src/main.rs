@@ -41,7 +41,8 @@ fn main() {
     }
     let mut rng = rand::thread_rng();
     let mut instance = init();
-    instance.verbose = true;
+    instance.verbose = 2;
+    let verbose = instance.verbose;
     let mut instance = &mut instance;
     let mut num: usize = 0;
     let mut f0_count: usize = 0;
@@ -55,7 +56,11 @@ fn main() {
     let max_values: usize = 512;
     let mut evgen;
 
-    println!("Generating initial database entries, please wait...");
+    if cfg!(feature = "cz") {
+        println!("Generuji úvodní položky databáze, prosím čekejte...");
+    } else {
+        println!("Generating initial database entries, please wait...");
+    }
     event_generator::init(instance, &mut rng, max_values, cycles);
 
     while num < cycles || cycles == 0 {
@@ -65,144 +70,300 @@ fn main() {
             0 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Adding material #{} to the database, supply: {}",
-                                 num, result.primary_id, result.amount);
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidávám materiál #{} do databáze; množství: {}",
+                                     num, result.primary_id, result.amount);
+                        } else {
+                            println!("[{}] Adding material #{} to the database, supply: {}",
+                                     num, result.primary_id, result.amount);
+                        }
                         f0_count += 1;
                     }
                     Err(1) => {
-                        println!("[{}] Adding material failed. \
-                        Name cannot be empty or contain only white spaces.", num);
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidání materiálu selhalo. \
+                            Název nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
+                        } else {
+                            println!("[{}] Adding material failed. \
+                            Name cannot be empty or contain only white spaces.", num);
+                        }
                     }
                     Err(2) => {
-                        //println!("[{}] Adding material failed. \
-                        //Supply cannot be zero.", num);
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Přidání materiálu selhalo. \
+                                Množství nesmí být 0.", num);
+                            } else {
+                                println!("[{}] Adding material failed. \
+                                Supply cannot be zero.", num);
+                            }
+                        }
                     }
                     Err(3) => {
-                        //println!("[{}] Adding material failed. \
-                        //Material already in database.", num);
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Přidání materiálu selhalo. \
+                                Materiál je již v databázi.", num);
+                            } else {
+                                println!("[{}] Adding material failed. \
+                                Material already in database.", num);
+                            }
+                        }
                     }
                     Err(_) => {
-                        println!("[{}] Adding material failed. \
-                        Unknown error.", num);
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidání materiálu selhalo. \
+                            Neznámá chyba.", num);
+                        } else {
+                            println!("[{}] Adding material failed. \
+                            Unknown error.", num);
+                        }
                     }
                 }
             }
             1 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Adding product #{} composed of {}x material #{} \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidávám produkt #{} složen z {} kusů materiálu #{} \
+                        do databáze", num, result.primary_id, result.amount, result.secondary_id);
+                        } else {
+                            println!("[{}] Adding product #{} composed of {}x material #{} \
                         to the database", num, result.primary_id, result.amount, result.secondary_id);
+                        }
                         f1_count += 1;
                     }
                     Err(1) => {
-                        //println!("[{}] Adding product failed. \
-                        //Product name cannot be empty or contain only white spaces.", num);
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Přidání produktu selhalo. \
+                                Název produktu nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
+                            } else {
+                                println!("[{}] Adding product failed. \
+                                Product name cannot be empty or contain only white spaces.", num);
+                            }
+                        }
                     }
                     Err(2) => {
-                        //println!("[{}] Adding product failed. \
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Přidání produktu selhalo. \
+                        //Název materiálu nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
+                            } else {
+                                println!("[{}] Adding product failed. \
                         //Material name cannot be empty or contain only white spaces.", num);
+                            }
+                        }
                     }
                     Err(3) => {
-                        //println!("[{}] Adding product failed. \
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Přidání produktu selhalo. \
+                        //Požadované množství materiálu nesmí být nula", num);
+                            } else {
+                                println!("[{}] Adding product failed. \
                         //Material amount required must not be zero.", num);
+                            }
+                        }
                     }
                     Err(4) => {
-                        println!("[{}] Adding product failed. \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidání produktu selhalo. \
+                        Materiál neexistuje.", num);
+                        } else {
+                            println!("[{}] Adding product failed. \
                         Material does not exist.", num);
+                        }
                     }
                     Err(5) => {
-                        //println!("[{}] Adding product failed. \
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Přidání produktu selhalo. \
+                        //Produkt již existuje.", num);
+                            } else {
+                                println!("[{}] Adding product failed. \
                         //Product already exists.", num);
+                            }
+                        }
                     }
                     Err(_) => {
-                        println!("[{}] Adding product failed. Unknown error.", num);
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidání produktu selhalo. Neznámá chyba.", num);
+                        } else { println!("[{}] Adding product failed. Unknown error.", num); }
                     }
                 }
             }
             2 | 3 | 4 | 5 => {
                 match evgen {
                     Ok(result) => {
-                        //let tmp = instance.get_material_scarcity(&result.material_id);
                         match *result.code {
                             4 => {
-                                println!("[{}] Manufacturing of {}x product #{} DENIED. \
+                                if cfg!(feature = "cz")
+                                {
+                                    println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
+                        Materiál #{} není k dispozici; nedostatkovost: {}", num, result.amount, result.primary_id, result.secondary_id,
+                                             get_material_scarcity(instance, &result.secondary_id));
+                                } else {
+                                    println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} not available; scarcity: {}", num, result.amount, result.primary_id, result.secondary_id,
-                                         get_material_scarcity(instance, &result.secondary_id));
+                                             get_material_scarcity(instance, &result.secondary_id));
+                                }
                                 failed_no_supply += 1;
                             }
                             5 => {
-                                println!("[{}] Manufacturing of {}x product #{} DENIED. \
+                                if cfg!(feature = "cz") {
+                                    println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
+                        Materiál #{} nedostatkový: {} > 50.", num, result.amount, result.primary_id, result.secondary_id,
+                                             get_material_scarcity(instance, &result.secondary_id));
+                                } else {
+                                    println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} scarce: {} > 50.", num, result.amount, result.primary_id, result.secondary_id,
-                                         get_material_scarcity(instance, &result.secondary_id));
+                                             get_material_scarcity(instance, &result.secondary_id));
+                                }
                                 failed_scarce += 1;
                             }
-                            _ => println!("[{}] Adding product #{} to production queue \
+                            _ => {
+                                if cfg!(feature = "cz") {
+                                    println!("[{}] Doplňuji produkt #{} do výrobní fronty \
+                        za cenu {} kusů materiálu #{}, nedostatkovost: {}",
+                                             num, result.primary_id, result.amount, result.secondary_id,
+                                             get_material_scarcity(instance, &result.secondary_id))
+                                } else {
+                                    println!("[{}] Adding product #{} to production queue \
                         at the cost of {}x material #{}; scarcity: {}",
-                                           num, result.primary_id, result.amount, result.secondary_id,
-                                           get_material_scarcity(instance, &result.secondary_id)),
+                                             num, result.primary_id, result.amount, result.secondary_id,
+                                             get_material_scarcity(instance, &result.secondary_id))
+                                }
+                            }
                         }
                         f2_count += 1;
                     }
                     Err(2) => {
-                        //println!("[{}] Manufacturing product failed. \
-                        //Cannot order 0 products.", num);
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Výroba produktu selhala. \
+                                Nelze objednat 0 kusů.", num);
+                            } else {
+                                println!("[{}] Manufacturing product failed. \
+                        Cannot order 0 products.", num);
+                            }
+                        }
                     }
                     Err(3) => {
-                        //println!("[{}] Manufacturing product failed. \
-                        //No such material in database.", num);
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Výroba produktu selhala. \
+                        Materiál není v databázi", num);
+                            } else {
+                                println!("[{}] Manufacturing product failed. \
+                        No such material in database.", num);
+                            }
+                        }
                     }
                     Err(4) => {
-                        println!("[{}] Manufacturing product failed. \
-                        Material not available.", num); //safeguard for future code changes
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Výroba produktu selhala. \
+                        Materiál neí k dispozici", num);
+                        } else {
+                            println!("[{}] Manufacturing product failed. \
+                        Material not available.", num);
+                        } //safeguard for future code changes
                         panic!("Material not available.");
                     }
                     Err(5) => {
-                        println!("[{}] Manufacturing product failed. \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Výroba produktu selhala. \
+                        Materiál je vzácný.", num);
+                        } else {
+                            println!("[{}] Manufacturing product failed. \
                         Material scarce.", num); //safeguard for future code changes
+                        }
                         panic!("Material scarce.");
                     }
                     Err(6) => {
-                        //println!("[{}] Manufacturing product failed. \
-                        //Product database is empty.", num);
+                        if verbose >= 3 {
+                            if cfg!(feature = "cz") {
+                                println!("[{}] Výroba produktu selhala. \
+                         Databáze produktů je prázdná.", num);
+                            } else {
+                                println!("[{}] Manufacturing product failed. \
+                        Product database is empty.", num);
+                            }
+                        }
                     }
                     Err(_) => {
-                        println!("[{}] Manufacturing product failed. \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Výroba produktu selhala. \
+                        Neznámá chyba.", num);
+                        } else {
+                            println!("[{}] Manufacturing product failed. \
                         Unknown error.", num);
+                        }
                     }
                 }
             }
             6 | 7 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Adding new variant to product #{} \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidávám novou variantu produktu #{} \
+                        z materiálu #{}.", num, result.primary_id, result.secondary_id);
+                        } else {
+                            println!("[{}] Adding new variant to product #{} \
                         consisting of material #{}.", num, result.primary_id, result.secondary_id);
+                        }
                     }
                     Err(_) => {
-                        println!("[{}] Adding new variant failed. No such product or material.", num);
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Přidání nové varianty selhalo. Produkt nebo materiál neexistuje.", num);
+                        } else { println!("[{}] Adding new variant failed. No such product or material.", num); }
                     }
                 }
             }
             8 | 9 => {
                 match evgen {
                     Ok(result) => {
-                        println!("[{}] Updating supply of material #{} to {}; \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Aktualizuji nabídku materiálu #{} na {} ks; \
+                        poptávka: {}, nedostatkovost: {}", num, result.primary_id, result.amount,
+                                     get_material_demand(instance, &result.primary_id),
+                                     tst_get_material(instance, result.primary_id).get_scarcity()
+                            );
+                        } else {
+                            println!("[{}] Updating supply of material #{} to {}; \
                         demand: {}, scarcity: {}", num, result.primary_id, result.amount,
-                                 get_material_demand(instance, &result.primary_id),
-                                 tst_get_material(instance, result.primary_id).get_scarcity()
-                        );
+                                     get_material_demand(instance, &result.primary_id),
+                                     tst_get_material(instance, result.primary_id).get_scarcity()
+                            );
+                        }
                         f3_count += 1;
                     }
                     Err(1) => {
-                        println!("[{}] Updating supply of material failed. \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Aktualizace nabídky materiálu selhala. \
+                        Databáze materiálů je prázdná.", num);
+                        } else {
+                            println!("[{}] Updating supply of material failed. \
                         No materials in database.", num);
+                        }
                     }
                     Err(2) => {
-                        println!("[{}] Updating supply of material failed. \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Aktualizace nabídky materiálu selhala. \
+                        Proces selhal.", num);
+                        } else {
+                            println!("[{}] Updating supply of material failed. \
                         Supply update failed.", num);
+                        }
                     }
                     Err(_) => {
-                        println!("[{}] Updating supply of material failed. \
+                        if cfg!(feature = "cz") {
+                            println!("[{}] Aktualizace nabídky materiálu selhala. \
+                        Neznámá chyba.", num);
+                        } else {
+                            println!("[{}] Updating supply of material failed. \
                         Unknown error.", num);
+                        }
                     }
                 }
             }
@@ -212,10 +373,18 @@ fn main() {
         num += 1;
         if millis != 0 { thread::sleep(time); }
     }
-    eprintln!("\nProgram ends at cycle {}.\n\
+    if cfg!(feature = "cz")
+    {
+        eprintln!("\nProgram skončil v cyklu {}.\n\
+    Vykonané funkce      | Přidej materiál: {}, Přidej produkt: {}, Objednej produkt: {}, Aktualizuj nabídku: {}",
+                  num, f0_count, f1_count, f2_count, f3_count);
+        eprintln!("Neúspěšné objednávky | nedostatečná nabídka: {}, vzácnost: {}", failed_no_supply, failed_scarce);
+    } else {
+        eprintln!("\nProgram ends at cycle {}.\n\
     Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
-              num, f0_count, f1_count, f2_count, f3_count);
-    eprintln!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
+                  num, f0_count, f1_count, f2_count, f3_count);
+        eprintln!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
+    }
     #[cfg(target_family = "windows")]
         std::io::stdin().read(&mut [0u8]).unwrap();
 }

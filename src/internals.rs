@@ -22,7 +22,7 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
                      products: &mut HashMap<usize, Product>,
                      materials: &mut HashMap<usize, Material>,
                      finished_products: &mut Vec<Order>,
-                     verbose: bool)
+                     verbose: usize)
 {
     for q in production_queue.iter_mut() {
         let mut i: usize = 0;
@@ -51,9 +51,14 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
                     q_product.manufacture(q_material, q[i].product_amount, &variant);
                     q_product.deliver(q[i].product_amount);
                     let finished_product = q.remove(i);
-                    if verbose {
-                        println!(" * Manufacturing {}x product #{}, variant {} from priority {} production queue.",
-                                 finished_product.product_amount, finished_product.product_id, variant.id, q_product.priority + 1);
+                    if verbose >= 2 {
+                        if cfg!(feature = "cz") {
+                            println!(" * Vyrábím {}x produkt #{}, varianta {} z fronty priority {}.",
+                                     finished_product.product_amount, finished_product.product_id, variant.id, q_product.priority + 1);
+                        } else {
+                            println!(" * Manufacturing {}x product #{}, variant {} from priority {} production queue.",
+                                     finished_product.product_amount, finished_product.product_id, variant.id, q_product.priority + 1);
+                        }
                     }
                     finished_products.push(finished_product);
                     found = true;

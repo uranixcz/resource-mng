@@ -133,7 +133,7 @@ pub struct Instance {
     products: HashMap<usize, Product>,
     production_queue: [Vec<Order>; PRIORITIES],
     finished_products: Vec<Order>,
-    pub verbose: bool,
+    pub verbose: usize,
 }
 
 #[no_mangle]
@@ -143,7 +143,7 @@ pub extern fn init() -> Box<Instance> {
         products: HashMap::new(),
         production_queue: [Vec::new(), Vec::new(), Vec::new(), Vec::new()],
         finished_products: Vec::new(),
-        verbose: false,
+        verbose: 0,
     })
 }
 
