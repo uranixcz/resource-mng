@@ -19,6 +19,7 @@ mod internals;
 
 use std::collections::HashMap;
 use std::cmp::Ordering;
+use std::collections::hash_map::Entry;
 
 const PRIORITIES: usize = 4;
 const EQUILIBRIUM: usize = 50;
@@ -153,16 +154,17 @@ pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: usize
 
     if supply == 0 { return ZERO_SUPPLY; }
 
-    if !instance.materials.contains_key(&new_id) {
-        instance.materials.insert(new_id, Material {
-            //name,
-            scarcity_cache: 0,
-            demand: 0,
-            supply,
-            //deposit_size,
-        });
-        0 //ok
-    } else { DUPLICATE_MATERIAL }
+    match instance.materials.entry(new_id) {
+        Entry::Vacant(v) => {
+            v.insert(Material {
+                scarcity_cache: 0,
+                demand: 0,
+                supply,
+            });
+            0 //ok
+        }
+        Entry::Occupied(_) => DUPLICATE_MATERIAL
+    }
 }
 
 #[no_mangle]
@@ -204,10 +206,10 @@ pub extern fn order_product(instance: &mut Instance,
 
     if amount == 0 { return CANNOT_ORDER_0_PRODUCTS; }
     let products = &mut instance.products;
-    if products.len() == 0 { panic!("no products in database"); }
+    if products.is_empty() { panic!("no products in database"); }
     let mut prod = products.remove(&id).unwrap();
 
-    let variant = prod.get_variant(variant_id).clone();
+    let variant = *prod.get_variant(variant_id);
     let production_queue = &mut instance.production_queue;
     let mut material = match instance.materials.remove(&variant.components.material_id) {
         Some(m) => m,
@@ -240,7 +242,7 @@ pub extern fn order_product(instance: &mut Instance,
             allow_substitution,
         });
     }
-    instance.materials.insert(variant.components.material_id.clone(), material);
+    instance.materials.insert(variant.components.material_id, material);
     products.insert(id, prod);
 
     if code != OK_QUEUE {
@@ -309,12 +311,12 @@ pub extern fn get_material_count(instance: &Instance) -> usize {
 
 #[no_mangle]
 pub extern fn get_material_demand(instance: &Instance, id: &usize) -> usize {
-    instance.materials.get(id).unwrap().demand
+    instance.materials[id].demand
 }
 
 #[no_mangle]
 pub extern fn get_material_supply(instance: &Instance, id: &usize) -> usize {
-    instance.materials.get(id).unwrap().supply
+    instance.materials[id].supply
 }
 
 #[no_mangle]
@@ -329,22 +331,22 @@ pub extern fn get_product_count(instance: &Instance) -> usize {
 
 #[no_mangle]
 pub extern fn get_product_supply(instance: &Instance, id: &usize) -> usize {
-    instance.products.get(id).unwrap().supply
+    instance.products[id].supply
 }
 
 #[no_mangle]
 pub extern fn get_product_demand(instance: &Instance, id: &usize) -> usize {
-    instance.products.get(id).unwrap().demand
+    instance.products[id].demand
 }
 
 #[no_mangle]
 pub extern fn get_product_priority(instance: &Instance, id: &usize) -> usize {
-    instance.products.get(id).unwrap().priority
+    instance.products[id].priority
 }
 
 #[no_mangle]
 pub extern fn get_product_variant(instance: &Instance, product_id: &usize, variant_id: usize) -> Component {
-    instance.products.get(product_id).unwrap().variants.get(variant_id).unwrap().components
+    instance.products[product_id].variants[variant_id].components
 }
 
 #[no_mangle]
@@ -365,7 +367,7 @@ pub extern fn get_next_finished(instance: &mut Instance) -> COption<Order> {
 }
 
 pub fn get_product_variants<'a>(instance: &'a Instance, id: &usize) -> &'a Vec<ProductVariant> {
-    &instance.products.get(id).unwrap().variants
+    &instance.products[id].variants
 }
 
 #[no_mangle]
@@ -373,8 +375,8 @@ pub extern fn tst_set_product_supply(instance: &mut Instance, id: &usize, count:
     instance.products.get_mut(id).unwrap().supply = count;
 }
 
-pub fn tst_get_material(instance: &Instance, id: &usize) -> Material {
-    instance.materials.get(id).unwrap().clone()
+pub fn tst_get_material(instance: &Instance, id: usize) -> Material {
+    instance.materials[&id].clone()
 }
 
 pub fn tst_get_materials(instance: &Instance) -> &HashMap<usize, Material> {

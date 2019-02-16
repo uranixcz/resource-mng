@@ -56,11 +56,11 @@ fn main() {
     let mut evgen;
 
     println!("Generating initial database entries, please wait...");
-    event_generator::init(instance, &mut rng, &max_values, &cycles);
+    event_generator::init(instance, &mut rng, max_values, cycles);
 
     while num < cycles || cycles == 0 {
         fn_num = rng.gen::<u8>() % 10;
-        evgen = event_generator::run(&mut instance, fn_num, &mut rng, &max_values);
+        evgen = event_generator::run(&mut instance, fn_num, &mut rng, max_values);
         match fn_num {
             0 => {
                 match evgen {
@@ -123,20 +123,20 @@ fn main() {
                 match evgen {
                     Ok(result) => {
                         //let tmp = instance.get_material_scarcity(&result.material_id);
-                        match result.code {
-                            &4 => {
+                        match *result.code {
+                            4 => {
                                 println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} not available; scarcity: {}", num, result.amount, result.primary_id, result.secondary_id,
                                          get_material_scarcity(instance, &result.secondary_id));
                                 failed_no_supply += 1;
                             }
-                            &5 => {
+                            5 => {
                                 println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} scarce: {} > 50.", num, result.amount, result.primary_id, result.secondary_id,
                                          get_material_scarcity(instance, &result.secondary_id));
                                 failed_scarce += 1;
                             }
-                            &_ => println!("[{}] Adding product #{} to production queue \
+                            _ => println!("[{}] Adding product #{} to production queue \
                         at the cost of {}x material #{}; scarcity: {}",
                                            num, result.primary_id, result.amount, result.secondary_id,
                                            get_material_scarcity(instance, &result.secondary_id)),
@@ -188,7 +188,7 @@ fn main() {
                         println!("[{}] Updating supply of material #{} to {}; \
                         demand: {}, scarcity: {}", num, result.primary_id, result.amount,
                                  get_material_demand(instance, &result.primary_id),
-                                 tst_get_material(instance, &result.primary_id).get_scarcity()
+                                 tst_get_material(instance, result.primary_id).get_scarcity()
                         );
                         f3_count += 1;
                     }

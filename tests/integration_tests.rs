@@ -41,7 +41,7 @@ fn order_two_same_mat() {
     //process_queue(instance);
     assert_eq!(order_product(instance, 1235, 1, 0, 0, true), 1);
     process_queue(instance);
-    assert_eq!(tst_get_material(instance, &123).demand, 0);
-    assert_eq!(tst_get_material(instance, &123).supply, 0);
-    assert_eq!(tst_get_material(instance, &123).scarcity_cache, 50);
+    assert_eq!(tst_get_material(instance, 123).demand, 0);
+    assert_eq!(tst_get_material(instance, 123).supply, 0);
+    assert_eq!(tst_get_material(instance, 123).scarcity_cache, 50);
 }
