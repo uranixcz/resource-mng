@@ -37,8 +37,7 @@ fn main() {
         millis = args[2].parse().unwrap();
     } else {
         cycles = 500;
-        if cfg!(windows) { millis = 500; }
-        else { millis = 0 }
+        if cfg!(windows) { millis = 500; } else { millis = 0 }
     }
     let mut rng = rand::thread_rng();
     let mut instance = init();
@@ -69,32 +68,32 @@ fn main() {
                         println!("[{}] Adding material #{} to the database, supply: {}",
                                  num, result.primary_id, result.amount);
                         f0_count += 1;
-                    },
+                    }
                     Err(1) => {
                         println!("[{}] Adding material failed. \
                         Name cannot be empty or contain only white spaces.", num);
-                    },
+                    }
                     Err(2) => {
                         //println!("[{}] Adding material failed. \
                         //Supply cannot be zero.", num);
-                    },
+                    }
                     Err(3) => {
                         //println!("[{}] Adding material failed. \
                         //Material already in database.", num);
-                    },
+                    }
                     Err(_) => {
                         println!("[{}] Adding material failed. \
                         Unknown error.", num);
                     }
                 }
-            },
+            }
             1 => {
                 match evgen {
                     Ok(result) => {
                         println!("[{}] Adding product #{} composed of {}x material #{} \
                         to the database", num, result.primary_id, result.amount, result.secondary_id);
-                        f1_count +=1;
-                    },
+                        f1_count += 1;
+                    }
                     Err(1) => {
                         //println!("[{}] Adding product failed. \
                         //Product name cannot be empty or contain only white spaces.", num);
@@ -119,8 +118,8 @@ fn main() {
                         println!("[{}] Adding product failed. Unknown error.", num);
                     }
                 }
-            },
-            2|3|4|5 => {
+            }
+            2 | 3 | 4 | 5 => {
                 match evgen {
                     Ok(result) => {
                         //let tmp = instance.get_material_scarcity(&result.material_id);
@@ -129,84 +128,85 @@ fn main() {
                                 println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} not available; scarcity: {}", num, result.amount, result.primary_id, result.secondary_id,
                                          get_material_scarcity(instance, &result.secondary_id));
-                                failed_no_supply +=1;
-                            },
-                            &5 => { println!("[{}] Manufacturing of {}x product #{} DENIED. \
+                                failed_no_supply += 1;
+                            }
+                            &5 => {
+                                println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} scarce: {} > 50.", num, result.amount, result.primary_id, result.secondary_id,
-                                             get_material_scarcity(instance, &result.secondary_id));
-                                failed_scarce +=1;
-                            },
+                                         get_material_scarcity(instance, &result.secondary_id));
+                                failed_scarce += 1;
+                            }
                             &_ => println!("[{}] Adding product #{} to production queue \
                         at the cost of {}x material #{}; scarcity: {}",
                                            num, result.primary_id, result.amount, result.secondary_id,
                                            get_material_scarcity(instance, &result.secondary_id)),
                         }
-                        f2_count +=1;
-                    },
+                        f2_count += 1;
+                    }
                     Err(2) => {
                         //println!("[{}] Manufacturing product failed. \
                         //Cannot order 0 products.", num);
-                    },
+                    }
                     Err(3) => {
                         //println!("[{}] Manufacturing product failed. \
                         //No such material in database.", num);
-                    },
+                    }
                     Err(4) => {
                         println!("[{}] Manufacturing product failed. \
                         Material not available.", num); //safeguard for future code changes
                         panic!("Material not available.");
-                    },
+                    }
                     Err(5) => {
                         println!("[{}] Manufacturing product failed. \
                         Material scarce.", num); //safeguard for future code changes
                         panic!("Material scarce.");
-                    },
+                    }
                     Err(6) => {
                         //println!("[{}] Manufacturing product failed. \
                         //Product database is empty.", num);
-                    },
+                    }
                     Err(_) => {
                         println!("[{}] Manufacturing product failed. \
                         Unknown error.", num);
                     }
                 }
-            },
-            6|7 => {
+            }
+            6 | 7 => {
                 match evgen {
                     Ok(result) => {
                         println!("[{}] Adding new variant to product #{} \
                         consisting of material #{}.", num, result.primary_id, result.secondary_id);
-                    },
+                    }
                     Err(_) => {
                         println!("[{}] Adding new variant failed. No such product or material.", num);
                     }
                 }
             }
-            8|9 => {
+            8 | 9 => {
                 match evgen {
                     Ok(result) => {
                         println!("[{}] Updating supply of material #{} to {}; \
                         demand: {}, scarcity: {}", num, result.primary_id, result.amount,
                                  get_material_demand(instance, &result.primary_id),
                                  tst_get_material(instance, &result.primary_id).get_scarcity()
-                                 );
-                        f3_count +=1;
-                    },
+                        );
+                        f3_count += 1;
+                    }
                     Err(1) => {
                         println!("[{}] Updating supply of material failed. \
                         No materials in database.", num);
-                    },
+                    }
                     Err(2) => {
                         println!("[{}] Updating supply of material failed. \
                         Supply update failed.", num);
-                    },
+                    }
                     Err(_) => {
                         println!("[{}] Updating supply of material failed. \
                         Unknown error.", num);
                     }
                 }
-            },
-            _ => { panic!("Out of range.")}
+            }
+            _ => { panic!("Out of range.") }
         }
 
         num += 1;
@@ -214,7 +214,7 @@ fn main() {
     }
     eprintln!("\nProgram ends at cycle {}.\n\
     Functions passed | Add material: {}, Add product: {}, Order product: {}, Update supply: {}",
-             num, f0_count, f1_count, f2_count, f3_count);
+              num, f0_count, f1_count, f2_count, f3_count);
     eprintln!("Failed orders    | no supply: {}, scarce: {}", failed_no_supply, failed_scarce);
     #[cfg(target_family = "windows")]
         std::io::stdin().read(&mut [0u8]).unwrap();

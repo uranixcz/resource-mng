@@ -19,13 +19,13 @@ use std::collections::HashMap;
 use crate::{Order, Product, Material, PRIORITIES};
 
 pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
-                     products: &mut HashMap<usize,Product>,
-                     materials: &mut HashMap<usize,Material>,
+                     products: &mut HashMap<usize, Product>,
+                     materials: &mut HashMap<usize, Material>,
                      finished_products: &mut Vec<Order>,
                      verbose: bool)
 {
     for q in production_queue.iter_mut() {
-        let mut i:usize = 0;
+        let mut i: usize = 0;
         //let mut to_remove = Vec::new();
         while i != q.len() {
             let mut found = false;
@@ -47,13 +47,13 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
                 let q_material = materials.get_mut(&variant.components.material_id).unwrap();
                 let material_amount = q[i].product_amount * variant.components.material_amount;
                 if q_material.supply >= material_amount {
-                    if variant.id != q[i].preferred_variant {q_material.demand += material_amount;}
+                    if variant.id != q[i].preferred_variant { q_material.demand += material_amount; }
                     q_product.manufacture(q_material, q[i].product_amount, &variant);
                     q_product.deliver(q[i].product_amount);
                     let finished_product = q.remove(i);
                     if verbose {
                         println!(" * Manufacturing {}x product #{}, variant {} from priority {} production queue.",
-                                 finished_product.product_amount, finished_product.product_id, variant.id, q_product.priority+1);
+                                 finished_product.product_amount, finished_product.product_id, variant.id, q_product.priority + 1);
                     }
                     finished_products.push(finished_product);
                     found = true;
