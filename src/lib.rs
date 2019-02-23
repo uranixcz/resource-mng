@@ -23,6 +23,10 @@ use std::collections::hash_map::Entry;
 
 const PRIORITIES: usize = 4;
 const EQUILIBRIUM: usize = 50;
+pub const VERBOSITY_QUIET: usize = 0;
+pub const VERBOSITY_RESULTS: usize = 1; // not used in the lib
+pub const VERBOSITY_INNER: usize = 2;
+pub const VERBOSITY_FAILURES: usize = 3; // not used in the lib; should be replaced by callbacks
 
 //#[derive(Debug)]
 pub struct Product {
@@ -245,7 +249,7 @@ pub extern fn order_product(instance: &mut Instance,
     instance.materials.insert(variant.components.material_id, material);
     products.insert(id, prod);
 
-    if code != OK_QUEUE {
+    if code > OK_QUEUE {
         internals::process_queue(&mut instance.production_queue,
                                  &mut instance.products,
                                  &mut instance.materials,
@@ -420,5 +424,11 @@ mod tests {
         let instance = &mut init();
         add_material(instance, 1234, 8);
         assert_ne!(add_product(instance, 1234, 1234, 0, 0, 1.0), 0);
+    }
+
+    #[test]
+    fn order_zero_products() {
+        let instance = &mut init();
+        assert_eq!(order_product(instance, 0, 0, 0, 0, true), 2);
     }
 }

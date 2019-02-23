@@ -41,7 +41,7 @@ fn main() {
     }
     let mut rng = rand::thread_rng();
     let mut instance = init();
-    instance.verbose = 2;
+    instance.verbose = VERBOSITY_INNER;
     let verbose = instance.verbose;
     let mut instance = &mut instance;
     let mut num: usize = 0;
@@ -148,10 +148,10 @@ fn main() {
                         if verbose >= 3 {
                             if cfg!(feature = "cz") {
                                 println!("[{}] Přidání produktu selhalo. \
-                        //Název materiálu nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
+                        Název materiálu nesmí být prázdný nebo obsahovat netiskuté znaky.", num);
                             } else {
                                 println!("[{}] Adding product failed. \
-                        //Material name cannot be empty or contain only white spaces.", num);
+                        Material name cannot be empty or contain only white spaces.", num);
                             }
                         }
                     }
@@ -159,10 +159,10 @@ fn main() {
                         if verbose >= 3 {
                             if cfg!(feature = "cz") {
                                 println!("[{}] Přidání produktu selhalo. \
-                        //Požadované množství materiálu nesmí být nula", num);
+                        Požadované množství materiálu nesmí být nula", num);
                             } else {
                                 println!("[{}] Adding product failed. \
-                        //Material amount required must not be zero.", num);
+                        Material amount required must not be zero.", num);
                             }
                         }
                     }
@@ -179,10 +179,10 @@ fn main() {
                         if verbose >= 3 {
                             if cfg!(feature = "cz") {
                                 println!("[{}] Přidání produktu selhalo. \
-                        //Produkt již existuje.", num);
+                        Produkt již existuje.", num);
                             } else {
                                 println!("[{}] Adding product failed. \
-                        //Product already exists.", num);
+                        Product already exists.", num);
                             }
                         }
                     }
@@ -224,12 +224,12 @@ fn main() {
                             }
                             _ => {
                                 if cfg!(feature = "cz") {
-                                    println!("[{}] Doplňuji produkt #{} do výrobní fronty \
+                                    println!("[{}] Objednávám produkt #{} \
                         za cenu {} kusů materiálu #{}, nedostatkovost: {}",
                                              num, result.primary_id, result.amount, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id))
                                 } else {
-                                    println!("[{}] Adding product #{} to production queue \
+                                    println!("[{}] Ordering product #{} \
                         at the cost of {}x material #{}; scarcity: {}",
                                              num, result.primary_id, result.amount, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id))
