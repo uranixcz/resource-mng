@@ -24,6 +24,7 @@ pub struct RunResult {
     pub primary_id: usize,
     pub amount: usize,
     pub secondary_id: usize,
+    pub work_complexity: f64,
 }
 
 pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values: usize) -> Result<RunResult, u8> {
@@ -38,6 +39,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                         primary_id: id,
                         amount: supply,
                         secondary_id: 999_999_998, //should not be displayed
+                        work_complexity: 0.0,
                     })
                 }
                 num => Err(num)
@@ -62,6 +64,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                     primary_id: id,
                     amount: material_amount,
                     secondary_id: material_id,
+                    work_complexity: 0.0,
                 }),
                 num => { Err(num) } //"Could not add product"
             }
@@ -95,6 +98,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                         primary_id: id,
                         amount: amount * tmp2,
                         secondary_id: tmp1,
+                        work_complexity: 0.0,
                     })
                 }
                 4 => {
@@ -103,6 +107,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                         primary_id: id,
                         amount,
                         secondary_id: tmp1,
+                        work_complexity: 0.0,
                     })
                 }
                 5 => {
@@ -111,6 +116,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                         primary_id: id,
                         amount,
                         secondary_id: tmp1,
+                        work_complexity: 0.0,
                     })
                 }
                 num => {
@@ -148,6 +154,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                     primary_id: id,
                     amount: 0,
                     secondary_id: material_id,
+                    work_complexity,
                 }),
                 num => Err(num), //"Could not add product"
             }
@@ -169,6 +176,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                     primary_id: id,
                     amount,
                     secondary_id: 999_999_999, //should not be displayed
+                    work_complexity: 0.0,
                 })
             } else { Err(2) } //"Supply update failed"
         }

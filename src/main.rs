@@ -67,6 +67,7 @@ fn main() {
         fn_num = rng.gen::<u8>() % 10;
         evgen = event_generator::run(&mut instance, fn_num, &mut rng, max_values);
         match fn_num {
+            //add material
             0 => {
                 match evgen {
                     Ok(result) => {
@@ -121,6 +122,7 @@ fn main() {
                     }
                 }
             }
+            // add product
             1 => {
                 match evgen {
                     Ok(result) => {
@@ -193,6 +195,7 @@ fn main() {
                     }
                 }
             }
+            // order product
             2 | 3 | 4 | 5 => {
                 match evgen {
                     Ok(result) => {
@@ -302,15 +305,16 @@ fn main() {
                     }
                 }
             }
+            // add product variant
             6 | 7 => {
                 match evgen {
                     Ok(result) => {
                         if cfg!(feature = "cz") {
                             println!("[{}] Přidávám novou variantu produktu #{} \
-                        z materiálu #{}.", num, result.primary_id, result.secondary_id);
+                        z materiálu #{}, komplexita {:.2}.", num, result.primary_id, result.secondary_id, result.work_complexity);
                         } else {
                             println!("[{}] Adding new variant to product #{} \
-                        consisting of material #{}.", num, result.primary_id, result.secondary_id);
+                        consisting of material #{}, complexity {:.2}.", num, result.primary_id, result.secondary_id, result.work_complexity);
                         }
                     }
                     Err(_) => {
@@ -320,6 +324,7 @@ fn main() {
                     }
                 }
             }
+            // update supply
             8 | 9 => {
                 match evgen {
                     Ok(result) => {

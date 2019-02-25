@@ -36,10 +36,19 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
                 variant_material.scarcity_cache = variant_material.get_scarcity();
                 variant.components.scarcity_cache = variant_material.scarcity_cache;
             }
-            if q_product.variants.len() >= 2 {
+            if q_product.variants.len() > 1 {
+                if verbose >= crate::VERBOSITY_INNER {
+                    if cfg!(feature = "cz") {
+                        println!(" * Kalkuluji nejefektivnější variantu produktu #{} pro výrobu.",
+                                 q[i].product_id);
+                    } else {
+                        println!(" * Calculating the most efficient variant of product #{} for production.",
+                                 q[i].product_id);
+                    }
+                }
                 let index = q_product.variants.iter().position(|x| x.id == q[i].preferred_variant).unwrap();
                 let swap = q_product.variants.remove(index);
-                if q_product.variants.len() >= 2 { q_product.variants.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap()); }
+                if q_product.variants.len() > 1 { q_product.variants.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap()); }
                 q_product.variants.insert(0, swap);
             }
 
@@ -53,10 +62,10 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
                     let finished_product = q.remove(i);
                     if verbose >= crate::VERBOSITY_INNER {
                         if cfg!(feature = "cz") {
-                            println!(" * Vyrábím {}x produkt #{}, varianta {} (preferovaná byla {}) z fronty priority {}.",
+                            println!(" * Vyrábím {}x produkt #{}, varianta #{} (preferovaná byla {}) z fronty priority {}.",
                                      finished_product.product_amount, finished_product.product_id, variant.id, finished_product.preferred_variant, q_product.priority + 1);
                         } else {
-                            println!(" * Manufacturing {}x product #{}, variant {} (preferred was {}) from priority {} production queue.",
+                            println!(" * Manufacturing {}x product #{}, variant #{} (preferred was {}) from priority {} production queue.",
                                      finished_product.product_amount, finished_product.product_id, variant.id, finished_product.preferred_variant, q_product.priority + 1);
                         }
                     }
