@@ -21,7 +21,9 @@ use std::cmp::Ordering;
 
 impl ProductVariant {
     fn get_production_efficiency(&self) -> f64 {
-        self.components.scarcity_cache as f64 / self.work_complexity
+        if self.components.scarcity_cache == std::f64::INFINITY {
+            std::f64::MAX
+        } else { self.components.scarcity_cache / self.work_complexity }
     }
 }
 

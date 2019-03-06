@@ -37,7 +37,7 @@ fn main() {
         millis = args[2].parse().unwrap();
     } else {
         cycles = 500;
-        if cfg!(windows) { millis = 500; } else { millis = 0 }
+        if cfg!(windows) { millis = 1500; } else { millis = 0 }
     }
     let mut rng = rand::thread_rng();
     let mut instance = init();
@@ -51,15 +51,17 @@ fn main() {
     let mut f3_count: usize = 0;
     let mut failed_scarce: usize = 0;
     let mut failed_no_supply: usize = 0;
-    let time = time::Duration::from_millis(millis);
+    let sleep = time::Duration::from_millis(millis);
     let mut fn_num;
     let max_values: usize = 512;
     let mut evgen;
 
     if cfg!(feature = "cz") {
-        println!("Generuji úvodní položky databáze, prosím čekejte...");
+        println!("Spouštím simulaci na {} cyklů s pauzou {} ms.\n\
+        Generuji úvodní položky databáze, prosím čekejte...", cycles, millis);
     } else {
-        println!("Generating initial database entries, please wait...");
+        println!("Starting simulation for {} cycles with {} ms pause.\n\
+        Generating initial database entries, please wait...", cycles, millis);
     }
     event_generator::init(instance, &mut rng, max_values, cycles);
 
@@ -161,10 +163,10 @@ fn main() {
                         if verbose >= 3 {
                             if cfg!(feature = "cz") {
                                 println!("[{}] Přidání produktu selhalo. \
-                        Požadované množství materiálu nesmí být nula", num);
+                        Požadované množství materiálu nesmí být nula a méně", num);
                             } else {
                                 println!("[{}] Adding product failed. \
-                        Material amount required must not be zero.", num);
+                        Material amount required must not be zero and less.", num);
                             }
                         }
                     }
@@ -204,11 +206,11 @@ fn main() {
                                 if cfg!(feature = "cz")
                                 {
                                     println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
-                        Materiál #{} není k dispozici; nedostatkovost: {}", num, result.amount, result.primary_id, result.secondary_id,
+                        Materiál #{} není k dispozici; nedostatkovost: {:.2}", num, result.amount, result.primary_id, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id));
                                 } else {
                                     println!("[{}] Manufacturing of {}x product #{} DENIED. \
-                        Material #{} not available; scarcity: {}", num, result.amount, result.primary_id, result.secondary_id,
+                        Material #{} not available; scarcity: {:.2}", num, result.amount, result.primary_id, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id));
                                 }
                                 failed_no_supply += 1;
@@ -216,11 +218,11 @@ fn main() {
                             5 => {
                                 if cfg!(feature = "cz") {
                                     println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
-                        Materiál #{} nedostatkový: {} > 50.", num, result.amount, result.primary_id, result.secondary_id,
+                        Materiál #{} nedostatkový: {:.2} > 50.", num, result.amount, result.primary_id, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id));
                                 } else {
                                     println!("[{}] Manufacturing of {}x product #{} DENIED. \
-                        Material #{} scarce: {} > 50.", num, result.amount, result.primary_id, result.secondary_id,
+                        Material #{} scarce: {:.2} > 50.", num, result.amount, result.primary_id, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id));
                                 }
                                 failed_scarce += 1;
@@ -228,12 +230,12 @@ fn main() {
                             _ => {
                                 if cfg!(feature = "cz") {
                                     println!("[{}] Objednávám produkt #{} \
-                        za cenu {} kusů materiálu #{}, nedostatkovost: {}",
+                        za cenu {} kusů materiálu #{}, nedostatkovost: {:.2}",
                                              num, result.primary_id, result.amount, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id))
                                 } else {
                                     println!("[{}] Ordering product #{} \
-                        at the cost of {}x material #{}; scarcity: {}",
+                        at the cost of {}x material #{}; scarcity: {:.2}",
                                              num, result.primary_id, result.amount, result.secondary_id,
                                              get_material_scarcity(instance, &result.secondary_id))
                                 }
@@ -330,13 +332,13 @@ fn main() {
                     Ok(result) => {
                         if cfg!(feature = "cz") {
                             println!("[{}] Aktualizuji nabídku materiálu #{} na {} ks; \
-                        poptávka: {}, nedostatkovost: {}", num, result.primary_id, result.amount,
+                        poptávka: {}, nedostatkovost: {:.2}", num, result.primary_id, result.amount,
                                      get_material_demand(instance, &result.primary_id),
                                      tst_get_material(instance, result.primary_id).get_scarcity()
                             );
                         } else {
                             println!("[{}] Updating supply of material #{} to {}; \
-                        demand: {}, scarcity: {}", num, result.primary_id, result.amount,
+                        demand: {}, scarcity: {:.2}", num, result.primary_id, result.amount,
                                      get_material_demand(instance, &result.primary_id),
                                      tst_get_material(instance, result.primary_id).get_scarcity()
                             );
@@ -376,7 +378,7 @@ fn main() {
         }
 
         num += 1;
-        if millis != 0 { thread::sleep(time); }
+        if millis != 0 { thread::sleep(sleep); }
     }
     if cfg!(feature = "cz")
     {

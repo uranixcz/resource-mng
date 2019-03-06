@@ -22,7 +22,7 @@ use resource_mng::*;
 pub struct RunResult {
     pub code: &'static u8,
     pub primary_id: usize,
-    pub amount: usize,
+    pub amount: f64,
     pub secondary_id: usize,
     pub work_complexity: f64,
 }
@@ -31,7 +31,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
     match fn_num {
         0 => { //add material
             let id = rng.gen::<u16>() as usize;
-            let supply = rng.gen::<usize>() % max_values;
+            let supply = (rng.gen::<usize>() % max_values) as f64;
             match add_material(instance, id, supply) {
                 0 => {
                     Ok(RunResult {
@@ -47,7 +47,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
         }
         1 => { // add product
             let id = rng.gen::<u16>() as usize;
-            let material_amount = rng.gen::<usize>() % max_values / 32;
+            let material_amount = (rng.gen::<usize>() % max_values / 32) as f64;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
             let work_complexity = rng.gen_range::<f64>(1.0, 5.0);
@@ -70,7 +70,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             }
         }
         2 | 3 | 4 | 5 => { // order product
-            let amount = rng.gen::<usize>() % max_values / 48;
+            let amount = (rng.gen::<usize>() % max_values / 48) as f64;
             let product_count = get_product_count(instance);
             let rnd_index = if product_count > 0 {
                 rng.gen::<usize>() % product_count
@@ -145,14 +145,14 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                 .1
                 .0;
 
-            let material_amount = rng.gen::<usize>() % max_values / 32;
+            let material_amount = (rng.gen::<usize>() % max_values / 32) as f64;
             let work_complexity = rng.gen_range::<f64>(1.0, 5.0);
 
             match add_product_variant(instance, id, material_id, material_amount, work_complexity) {
                 0 => Ok(RunResult {
                     code: &0,
                     primary_id: id,
-                    amount: 0,
+                    amount: 0.0,
                     secondary_id: material_id,
                     work_complexity,
                 }),
@@ -160,7 +160,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             }
         }
         8 | 9 => { // update supply
-            let amount = rng.gen::<usize>() % max_values;
+            let amount = (rng.gen::<usize>() % max_values) as f64;
             let material_count = get_material_count(instance);
             let rnd_index = if material_count > 0 {
                 rng.gen::<usize>() % material_count
@@ -185,7 +185,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
 }
 
 pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: usize, cycles: usize) {
-    add_material(instance, 1, 10);
+    add_material(instance, 1, 10.);
     let tmp = rng.gen::<usize>() % cycles;
     //println!("{}, {}", tmp, cycles);
     let max: usize = if cycles > 10 { tmp } else { 10 };
@@ -193,11 +193,11 @@ pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: usize, cyc
     while cnt < max {
         if rng.gen::<u8>() % 2 == 0 {
             let name = rng.gen::<u16>() as usize;
-            let supply = rng.gen::<usize>() % max_values;
+            let supply = (rng.gen::<usize>() % max_values) as f64;
             add_material(instance, name, supply);
         } else {
             let name = rng.gen::<u16>() as usize;
-            let material_amount = rng.gen::<usize>() % max_values / 32;
+            let material_amount = (rng.gen::<usize>() % max_values / 32) as f64;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
             let material_id = *tst_get_materials(instance).iter().enumerate()
