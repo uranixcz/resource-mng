@@ -18,7 +18,6 @@
 mod internals;
 
 use std::collections::HashMap;
-use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 
 const PRIORITIES: usize = 4;
@@ -73,22 +72,6 @@ pub struct ProductVariant {
     pub components: Component,
     //change to vec in the future
     work_complexity: f64,
-}
-
-impl PartialOrd for ProductVariant {
-    fn partial_cmp(&self, other: &ProductVariant) -> Option<Ordering> {
-        let my = self.components.scarcity_cache as f64 / self.work_complexity;
-        let other = other.components.scarcity_cache as f64 / other.work_complexity;
-        my.partial_cmp(&other)
-    }
-}
-
-impl PartialEq for ProductVariant {
-    fn eq(&self, other: &ProductVariant) -> bool {
-        let my = self.components.scarcity_cache as f64 / self.work_complexity;
-        let other = other.components.scarcity_cache as f64 / other.work_complexity;
-        my == other
-    }
 }
 
 #[repr(C)]

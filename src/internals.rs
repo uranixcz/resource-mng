@@ -16,7 +16,30 @@
 */
 
 use std::collections::HashMap;
-use crate::{Order, Product, Material, PRIORITIES};
+use crate::{Order, Product, ProductVariant, Material, PRIORITIES};
+use std::cmp::Ordering;
+
+impl ProductVariant {
+    fn get_production_efficiency(&self) -> f64 {
+        self.components.scarcity_cache as f64 / self.work_complexity
+    }
+}
+
+impl PartialOrd for ProductVariant {
+    fn partial_cmp(&self, other: &ProductVariant) -> Option<Ordering> {
+        let my = self.get_production_efficiency();
+        let other = other.get_production_efficiency();
+        my.partial_cmp(&other)
+    }
+}
+
+impl PartialEq for ProductVariant {
+    fn eq(&self, other: &ProductVariant) -> bool {
+        let my = self.get_production_efficiency();
+        let other = other.get_production_efficiency();
+        my == other
+    }
+}
 
 pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
                      products: &mut HashMap<usize, Product>,
@@ -31,11 +54,14 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
             let mut found = false;
             let q_product = products.get_mut(&q[i].product_id).unwrap();
 
+            // update scarcity cache for components; better solution wanted
             for variant in q_product.variants.iter_mut() {
                 let variant_material = materials.get_mut(&variant.components.material_id).unwrap();
                 variant_material.scarcity_cache = variant_material.get_scarcity();
                 variant.components.scarcity_cache = variant_material.scarcity_cache;
             }
+
+            // sort variants by efficiency except the preferred one
             if q_product.variants.len() > 1 {
                 if verbose >= crate::VERBOSITY_INNER {
                     if cfg!(feature = "cz") {
@@ -52,6 +78,7 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
                 q_product.variants.insert(0, swap);
             }
 
+            // manufacture the first one to meet conditions
             for variant in q_product.variants.clone() {
                 let q_material = materials.get_mut(&variant.components.material_id).unwrap();
                 let material_amount = q[i].product_amount * variant.components.material_amount;
