@@ -158,11 +158,11 @@ pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: f64) 
 pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: usize, material_amount: f64, priority: usize, work_complexity: f64) -> u8 {
     const ZERO_MATERIAL: u8 = 3;
     const NO_SUCH_MATERIAL: u8 = 4;
-    const NO_SUCH_PRODUCT: u8 = 5;
+    const DUPLICATE_PRODUCT: u8 = 5;
 
     if material_amount <= 0.0 { return ZERO_MATERIAL; }
     if !instance.materials.contains_key(&material_id) { return NO_SUCH_MATERIAL; }
-    if instance.products.contains_key(&new_id) { return NO_SUCH_PRODUCT; }
+    if instance.products.contains_key(&new_id) { return DUPLICATE_PRODUCT; }
     instance.products.insert(new_id, Product {
         //name,
         variants: vec![ProductVariant {
