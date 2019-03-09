@@ -1,5 +1,5 @@
 /*
-* Copyright 2017-2018 Michal Mauser
+* Copyright 2017-2019 Michal Mauser
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU Affero General Public License as published by
