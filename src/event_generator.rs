@@ -32,7 +32,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
         0 => { //add material
             let id = rng.gen::<u16>() as usize;
             let supply = (rng.gen::<usize>() % max_values) as f64;
-            match add_material(instance, id, supply) {
+            match add_material(instance, supply) {
                 0 => {
                     Ok(RunResult {
                         code: &0,
@@ -46,7 +46,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             }
         }
         1 => { // add product
-            let id = rng.gen::<u16>() as usize;
+            //let id = rng.gen::<u16>() as usize;
             let material_amount = (rng.gen::<usize>() % max_values / 32) as f64;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
@@ -57,11 +57,11 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
                 .1
                 .0;
             //let work_complexity = rng.gen::<u8>();
-            match add_product(instance, id, material_id,
+            match add_product(instance, material_id,
                               material_amount, priority, work_complexity) {
                 0 => Ok(RunResult {
                     code: &0,
-                    primary_id: id,
+                    primary_id: instance.get_products().len(),
                     amount: material_amount,
                     secondary_id: material_id,
                     work_complexity: 0.0,
@@ -185,18 +185,18 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
 }
 
 pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: usize, cycles: usize) {
-    add_material(instance, 1, 10.);
+    add_material(instance, 10.);
     let tmp = rng.gen::<usize>() % cycles;
     //println!("{}, {}", tmp, cycles);
     let max: usize = if cycles > 10 { tmp } else { 10 };
     let mut cnt: usize = 0;
     while cnt < max {
         if rng.gen::<u8>() % 2 == 0 {
-            let name = rng.gen::<u16>() as usize;
+            //let name = rng.gen::<u16>() as usize;
             let supply = (rng.gen::<usize>() % max_values) as f64;
-            add_material(instance, name, supply);
+            add_material(instance, supply);
         } else {
-            let name = rng.gen::<u16>() as usize;
+            //let name = rng.gen::<u16>() as usize;
             let material_amount = (rng.gen::<usize>() % max_values / 32) as f64;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
@@ -206,7 +206,7 @@ pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: usize, cyc
                 .1
                 .0;
             //let work_complexity = rng.gen::<u8>();
-            add_product(instance, name, material_id,
+            add_product(instance, material_id,
                         material_amount, priority, 1.0);
         }
         cnt += 1;

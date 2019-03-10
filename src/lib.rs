@@ -153,13 +153,13 @@ pub extern fn init() -> Box<Instance> {
 }
 
 #[no_mangle]
-pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: f64) -> u8 {
+pub extern fn add_material(instance: &mut Instance, supply: f64) -> u8 {
     const ZERO_SUPPLY: u8 = 2;
     const DUPLICATE_MATERIAL: u8 = 3;
 
     if supply <= 0.0 { return ZERO_SUPPLY; }
 
-    match instance.materials.entry(new_id) {
+    match instance.materials.entry(instance.materials.len()) {
         Entry::Vacant(v) => {
             v.insert(Material {
                 scarcity_cache: 0.0,
@@ -173,15 +173,15 @@ pub extern fn add_material(instance: &mut Instance, new_id: usize, supply: f64) 
 }
 
 #[no_mangle]
-pub extern fn add_product(instance: &mut Instance, new_id: usize, material_id: usize, material_amount: f64, priority: usize, work_complexity: f64) -> u8 {
+pub extern fn add_product(instance: &mut Instance, material_id: usize, material_amount: f64, priority: usize, work_complexity: f64) -> u8 {
     const ZERO_MATERIAL: u8 = 3;
     const NO_SUCH_MATERIAL: u8 = 4;
     const DUPLICATE_PRODUCT: u8 = 5;
 
     if material_amount <= 0.0 { return ZERO_MATERIAL; }
     if !instance.materials.contains_key(&material_id) { return NO_SUCH_MATERIAL; }
-    if instance.products.contains_key(&new_id) { return DUPLICATE_PRODUCT; }
-    instance.products.insert(new_id, Product {
+    if instance.products.contains_key(&instance.products.len()) { return DUPLICATE_PRODUCT; }
+    instance.products.insert(instance.products.len(), Product {
         //name,
         variants: vec![ProductVariant {
             id: 0,
@@ -417,31 +417,31 @@ mod tests {
     #[test]
     fn add_same_material() {
         let instance = &mut init();
-        add_material(instance, 1234, 8.);
-        add_material(instance, 1234, 1.);
-        assert_eq!(instance.materials.get(&1234).unwrap().supply, 8.);
+        add_material(instance, 8.);
+        add_material(instance, 1.);
+        assert_eq!(instance.materials.get(&0).unwrap().supply, 8.);
     }
 
     #[test]
     fn add_product_without_material() {
         let instance = &mut init();
-        assert_ne!(!add_product(instance, 1234, 12345, 10., 0, 1.0), 0);
+        assert_ne!(!add_product(instance,12345, 10., 0, 1.0), 0);
     }
 
     #[test]
     fn add_same_product() {
         let instance = &mut init();
-        add_material(instance, 1234, 8.);
-        add_product(instance, 12345, 1234, 10., 0, 1.0);
-        add_product(instance, 12345, 1234, 5., 0, 1.0);
-        assert_eq!(instance.products.get(&12345).unwrap().variants.first().unwrap().components.material_amount, 10.);
+        add_material(instance, 8.);
+        add_product(instance, 0, 10., 0, 1.0);
+        add_product(instance, 0, 5., 0, 1.0);
+        assert_eq!(instance.products.get(&0).unwrap().variants.first().unwrap().components.material_amount, 10.);
     }
 
     #[test]
     fn add_prod_zero_mat() {
         let instance = &mut init();
-        add_material(instance, 1234, 8.);
-        assert_ne!(add_product(instance, 1234, 1234, 0., 0, 1.0), 0);
+        add_material(instance, 8.);
+        assert_ne!(add_product(instance, 0, 0., 0, 1.0), 0);
     }
 
     #[test]
