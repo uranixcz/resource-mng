@@ -334,13 +334,13 @@ fn main() {
                             println!("[{}] Aktualizuji nabídku materiálu #{} na {} ks; \
                         poptávka: {}, nedostatkovost: {:.2}", num, result.primary_id, result.amount,
                                      get_material_demand(instance, &result.primary_id),
-                                     tst_get_material(instance, result.primary_id).get_scarcity()
+                                     instance.get_material(result.primary_id).get_scarcity()
                             );
                         } else {
                             println!("[{}] Updating supply of material #{} to {}; \
                         demand: {}, scarcity: {:.2}", num, result.primary_id, result.amount,
                                      get_material_demand(instance, &result.primary_id),
-                                     tst_get_material(instance, result.primary_id).get_scarcity()
+                                     instance.get_material(result.primary_id).get_scarcity()
                             );
                         }
                         f3_count += 1;

@@ -30,11 +30,11 @@ pub const VERBOSITY_FAILURES: usize = 3; // not used in the lib; should be repla
 //#[derive(Debug)]
 pub struct Product {
     //name: String,
-    variants: Vec<ProductVariant>,
+    pub variants: Vec<ProductVariant>,
     //scarcity: usize,
-    supply: f64,
-    demand: f64,
-    priority: usize,
+    pub supply: f64,
+    pub demand: f64,
+    pub priority: usize,
 }
 
 impl Product {
@@ -121,6 +121,24 @@ pub struct Instance {
     production_queue: [Vec<Order>; PRIORITIES],
     finished_products: Vec<Order>,
     pub verbose: usize,
+}
+
+impl Instance {
+    pub fn get_product(&self, id: usize) -> &Product {
+        &self.products[&id]
+    }
+
+    pub fn get_products(&self) -> &HashMap<usize, Product> {
+        &self.products
+    }
+
+    pub fn get_material(&self, id: usize) -> &Material {
+        &self.materials[&id]
+    }
+
+    pub fn get_materials(&self) -> &HashMap<usize, Material> {
+        &self.materials
+    }
 }
 
 #[no_mangle]
@@ -307,8 +325,8 @@ pub extern fn get_material_supply(instance: &Instance, id: &usize) -> f64 {
 }
 
 #[no_mangle]
-pub extern fn get_material_scarcity(instance: &mut Instance, id: &usize) -> f64 {
-    instance.materials.get_mut(id).unwrap().scarcity_cache
+pub extern fn get_material_scarcity(instance: &Instance, id: &usize) -> f64 {
+    instance.materials.get(id).unwrap().scarcity_cache
 }
 
 #[no_mangle]
@@ -353,6 +371,20 @@ pub extern fn get_next_finished(instance: &mut Instance) -> COption<Order> {
     }
 }
 
+#[no_mangle]
+pub extern fn get_finished_count(instance: &Instance) -> usize {
+    instance.finished_products.len()
+}
+
+#[no_mangle]
+pub extern fn get_queue_len(instance: &Instance) -> usize {
+    let mut total = 0;
+    for i in instance.production_queue.iter() {
+        total += i.len()
+    }
+    total
+}
+
 pub fn get_product_variants<'a>(instance: &'a Instance, id: &usize) -> &'a Vec<ProductVariant> {
     &instance.products[id].variants
 }
@@ -362,14 +394,17 @@ pub extern fn tst_set_product_supply(instance: &mut Instance, id: &usize, count:
     instance.products.get_mut(id).unwrap().supply = count;
 }
 
+#[deprecated(since="0.1.6", note="please use `self.get_material` instead")]
 pub fn tst_get_material(instance: &Instance, id: usize) -> Material {
     instance.materials[&id].clone()
 }
 
+#[deprecated(since="0.1.6", note="please use `self.get_materials` instead")]
 pub fn tst_get_materials(instance: &Instance) -> &HashMap<usize, Material> {
     &instance.materials
 }
 
+#[deprecated(since="0.1.6", note="please use `self.get_products` instead")]
 pub fn tst_get_products(instance: &Instance) -> &HashMap<usize, Product> {
     &instance.products
 }

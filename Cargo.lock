@@ -45,7 +45,7 @@ dependencies = [
 
 [[package]]
 name = "resource-mng"
-version = "0.1.4"
+version = "0.1.6"
 dependencies = [
  "rand 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
