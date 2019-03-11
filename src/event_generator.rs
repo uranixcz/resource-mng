@@ -51,11 +51,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
             let work_complexity = rng.gen_range::<f64>(1.0, 5.0);
-            let material_id = *instance.get_materials().iter().enumerate()
-                .nth(rnd_index)
-                .unwrap()
-                .1
-                .0;
+            let material_id = rnd_index;
             //let work_complexity = rng.gen::<u8>();
             match add_product(instance, material_id,
                               material_amount, priority, work_complexity) {
@@ -78,11 +74,9 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             let id;
             let tmp;
             {
-                let product_item = instance.get_products().iter().enumerate()
-                    .nth(rnd_index)
-                    .unwrap().1;
-                id = *product_item.0;
-                tmp = product_item.1.get_variant(0).components;
+                let product_item = instance.get_products().get(rnd_index).unwrap();
+                id = rnd_index;
+                tmp = product_item.get_variant(0).components;
             }
             let tmp1;
             let tmp2;
@@ -129,21 +123,13 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             let rnd_index = if product_count > 0 {
                 rng.gen::<usize>() % product_count
             } else { return Err(6); }; //"Product database is empty."
-            let id = *instance.get_products().iter().enumerate()
-                .nth(rnd_index)
-                .unwrap()
-                .1
-                .0;
+            let id = rnd_index;
 
             let material_count = get_material_count(instance);
             let rnd_index = if material_count > 0 {
                 rng.gen::<usize>() % material_count
             } else { return Err(6); }; //"Material database is empty."
-            let material_id = *instance.get_materials().iter().enumerate()
-                .nth(rnd_index)
-                .unwrap()
-                .1
-                .0;
+            let material_id = rnd_index;
 
             let material_amount = (rng.gen::<usize>() % max_values / 32) as f64;
             let work_complexity = rng.gen_range::<f64>(1.0, 5.0);
@@ -165,11 +151,7 @@ pub fn run(instance: &mut Instance, fn_num: u8, rng: &mut ThreadRng, max_values:
             let rnd_index = if material_count > 0 {
                 rng.gen::<usize>() % material_count
             } else { return Err(1); }; //"No materials in database."
-            let id = *instance.get_materials().iter().enumerate()
-                .nth(rnd_index)
-                .unwrap()
-                .1
-                .0;
+            let id = rnd_index;
             if update_supply(instance, id, amount) {
                 Ok(RunResult {
                     code: &0,
@@ -200,11 +182,7 @@ pub fn init(instance: &mut Instance, rng: &mut ThreadRng, max_values: usize, cyc
             let material_amount = (rng.gen::<usize>() % max_values / 32) as f64;
             let rnd_index = rng.gen::<usize>() % get_material_count(instance);
             let priority = rng.gen::<usize>() % 4;
-            let material_id = *instance.get_materials().iter().enumerate()
-                .nth(rnd_index)
-                .unwrap()
-                .1
-                .0;
+            let material_id = rnd_index;
             //let work_complexity = rng.gen::<u8>();
             add_product(instance, material_id,
                         material_amount, priority, 1.0);

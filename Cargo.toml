@@ -1,6 +1,6 @@
 [package]
 name = "resource-mng"
-version = "0.1.6"
+version = "0.2.0"
 authors = ["Michal Mauser <michal.mauser@zeitgeistmovement.cz>"]
 edition = "2018"
 

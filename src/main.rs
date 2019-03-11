@@ -207,11 +207,11 @@ fn main() {
                                 {
                                     println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
                         Materiál #{} není k dispozici; nedostatkovost: {:.2}", num, result.amount, result.primary_id, result.secondary_id,
-                                             get_material_scarcity(instance, &result.secondary_id));
+                                             get_material_scarcity(instance, result.secondary_id));
                                 } else {
                                     println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} not available; scarcity: {:.2}", num, result.amount, result.primary_id, result.secondary_id,
-                                             get_material_scarcity(instance, &result.secondary_id));
+                                             get_material_scarcity(instance, result.secondary_id));
                                 }
                                 failed_no_supply += 1;
                             }
@@ -219,11 +219,11 @@ fn main() {
                                 if cfg!(feature = "cz") {
                                     println!("[{}] Výroba {} produktů #{} ZAMÍTNUTA. \
                         Materiál #{} nedostatkový: {:.2} > 50.", num, result.amount, result.primary_id, result.secondary_id,
-                                             get_material_scarcity(instance, &result.secondary_id));
+                                             get_material_scarcity(instance, result.secondary_id));
                                 } else {
                                     println!("[{}] Manufacturing of {}x product #{} DENIED. \
                         Material #{} scarce: {:.2} > 50.", num, result.amount, result.primary_id, result.secondary_id,
-                                             get_material_scarcity(instance, &result.secondary_id));
+                                             get_material_scarcity(instance, result.secondary_id));
                                 }
                                 failed_scarce += 1;
                             }
@@ -232,12 +232,12 @@ fn main() {
                                     println!("[{}] Objednávám produkt #{} \
                         za cenu {} kusů materiálu #{}, nedostatkovost: {:.2}",
                                              num, result.primary_id, result.amount, result.secondary_id,
-                                             get_material_scarcity(instance, &result.secondary_id))
+                                             get_material_scarcity(instance, result.secondary_id))
                                 } else {
                                     println!("[{}] Ordering product #{} \
                         at the cost of {}x material #{}; scarcity: {:.2}",
                                              num, result.primary_id, result.amount, result.secondary_id,
-                                             get_material_scarcity(instance, &result.secondary_id))
+                                             get_material_scarcity(instance, result.secondary_id))
                                 }
                             }
                         }
@@ -333,13 +333,13 @@ fn main() {
                         if cfg!(feature = "cz") {
                             println!("[{}] Aktualizuji nabídku materiálu #{} na {} ks; \
                         poptávka: {}, nedostatkovost: {:.2}", num, result.primary_id, result.amount,
-                                     get_material_demand(instance, &result.primary_id),
+                                     get_material_demand(instance, result.primary_id),
                                      instance.get_material(result.primary_id).get_scarcity()
                             );
                         } else {
                             println!("[{}] Updating supply of material #{} to {}; \
                         demand: {}, scarcity: {:.2}", num, result.primary_id, result.amount,
-                                     get_material_demand(instance, &result.primary_id),
+                                     get_material_demand(instance, result.primary_id),
                                      instance.get_material(result.primary_id).get_scarcity()
                             );
                         }

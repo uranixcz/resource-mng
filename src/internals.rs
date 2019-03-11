@@ -15,7 +15,6 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-use std::collections::HashMap;
 use crate::{Order, Product, ProductVariant, Material, PRIORITIES};
 use std::cmp::Ordering;
 
@@ -44,8 +43,8 @@ impl PartialEq for ProductVariant {
 }
 
 pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
-                     products: &mut HashMap<usize, Product>,
-                     materials: &mut HashMap<usize, Material>,
+                     products: &mut Vec<Product>,
+                     materials: &mut Vec<Material>,
                      finished_products: &mut Vec<Order>,
                      verbose: usize)
 {
@@ -54,11 +53,11 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
         //let mut to_remove = Vec::new();
         while i != q.len() {
             let mut found = false;
-            let q_product = products.get_mut(&q[i].product_id).unwrap();
+            let q_product = products.get_mut(q[i].product_id).unwrap();
 
             // update scarcity cache for components; better solution wanted
-            for variant in q_product.variants.iter_mut() {
-                let variant_material = materials.get_mut(&variant.components.material_id).unwrap();
+            for mut variant in q_product.variants.iter_mut() {
+                let mut variant_material = materials.get_mut(variant.components.material_id).unwrap();
                 variant_material.scarcity_cache = variant_material.get_scarcity();
                 variant.components.scarcity_cache = variant_material.scarcity_cache;
             }
@@ -82,7 +81,7 @@ pub fn process_queue(production_queue: &mut [Vec<Order>; PRIORITIES],
 
             // manufacture the first one to meet conditions
             for variant in q_product.variants.clone() {
-                let q_material = materials.get_mut(&variant.components.material_id).unwrap();
+                let q_material = materials.get_mut(variant.components.material_id).unwrap();
                 let material_amount = q[i].product_amount * variant.components.material_amount;
                 if q_material.supply >= material_amount {
                     if variant.id != q[i].preferred_variant { q_material.demand += material_amount; }
